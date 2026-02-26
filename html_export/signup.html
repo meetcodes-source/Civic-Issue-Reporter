@@ -239,7 +239,8 @@
                 alert("OTP sent! Please check your email.");
             } catch (err) {
                 console.error("EmailJS Error:", err);
-                alert("Failed to send email. Ensure your EmailJS Public Key is set correctly in the script.");
+                const errorDetail = err.text || err.message || JSON.stringify(err);
+                alert("Failed to send email. \n\nError: " + errorDetail + "\n\nTip: Check if your Vercel domain is added to 'Authorized Domains' in your EmailJS Account Settings.");
                 btn.innerText = "Verify";
                 btn.disabled = false;
             }
