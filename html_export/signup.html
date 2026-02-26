@@ -143,7 +143,7 @@
                     <i data-lucide="user"
                         class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
                     <input type="text" id="signupName" placeholder="John Doe"
-                        class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                        class="w-full pl-12 pr-4 py-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
                         required />
                 </div>
             </div>
@@ -156,11 +156,11 @@
                             <i data-lucide="mail"
                                 class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
                             <input type="email" id="signupEmail" placeholder="john@example.com"
-                                class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                                class="w-full pl-12 pr-4 py-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
                                 required />
                         </div>
                         <button type="button" id="btnVerifyEmail" onclick="sendOTP()"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 rounded-2xl transition-all whitespace-nowrap">
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-2xl transition-all whitespace-nowrap">
                             Verify
                         </button>
                     </div>
@@ -171,14 +171,15 @@
                     <label class="block text-slate-700 font-semibold mb-2 ml-1">Enter OTP Sent to Email</label>
                     <div class="flex gap-2">
                         <input type="text" id="emailOTP" placeholder="123456"
-                            class="w-full p-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900 font-mono tracking-[0.5em] text-center text-lg"
+                            class="w-full p-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900 font-mono tracking-[0.5em] text-center text-lg"
                             maxlength="6" />
                         <button type="button" onclick="confirmOTP()"
-                            class="bg-green-600 hover:bg-green-700 text-white font-bold px-6 rounded-2xl transition-all">
+                            class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2.5 rounded-2xl transition-all">
                             Confirm
                         </button>
                     </div>
                     <p id="otpTimer" class="text-xs text-slate-500 mt-2 ml-2">Check your inbox for the code.</p>
+                    <p id="otpStatus" class="text-xs font-semibold mt-1 ml-2 text-red-500 hidden"></p>
                 </div>
 
                 <div class="col-span-1 md:col-span-2">
@@ -187,7 +188,7 @@
                         <i data-lucide="phone"
                             class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
                         <input type="tel" id="signupPhone" placeholder="(555) 123-4567"
-                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            class="w-full pl-12 pr-4 py-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
                             required />
                     </div>
                 </div>
@@ -198,7 +199,7 @@
                         <i data-lucide="map-pin"
                             class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
                         <input type="text" id="signupCity" placeholder="Metro City"
-                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            class="w-full pl-12 pr-4 py-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
                             required />
                     </div>
                 </div>
@@ -209,7 +210,7 @@
                         <i data-lucide="map"
                             class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
                         <input type="text" id="signupState" placeholder="MT"
-                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            class="w-full pl-12 pr-4 py-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
                             required />
                     </div>
                 </div>
@@ -221,7 +222,7 @@
                     <i data-lucide="lock"
                         class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
                     <input type="password" id="signupPassword" placeholder="Create a strong password"
-                        class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                        class="w-full pl-12 pr-4 py-2.5 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
                         required />
                 </div>
             </div>
@@ -236,7 +237,7 @@
             </div>
 
             <button type="button"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl text-lg shadow-lg transition-all hover:-translate-y-0.5 mt-4"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-2xl text-lg shadow-lg transition-all hover:-translate-y-0.5 mt-4"
                 onclick="handleCreateAccount()">
                 Create Account
             </button>
@@ -369,6 +370,7 @@
                 document.getElementById('otpInputGroup').classList.remove('hidden');
                 document.getElementById('btnVerifyEmail').innerText = "Resend";
                 document.getElementById('btnVerifyEmail').disabled = false;
+                document.getElementById('otpStatus').classList.add('hidden'); // Clear previous status
                 showToast("OTP Sent", "Six-digit verification code has been sent to your email.", "success");
             } catch (err) {
                 console.error("EmailJS Error:", err);
@@ -381,17 +383,27 @@
 
         function confirmOTP() {
             const userOTP = document.getElementById('emailOTP').value;
+            const otpStatus = document.getElementById('otpStatus');
+            const otpTimer = document.getElementById('otpTimer');
+
             if (userOTP === generatedOTP) {
                 isEmailVerified = true;
                 showToast("Email Verified", "Your email has been successfully verified.", "success");
+
+                // Hide verification inputs and messages
                 document.getElementById('otpInputGroup').classList.add('hidden');
+                otpStatus.classList.add('hidden');
+                otpTimer.classList.add('hidden');
+
                 document.getElementById('signupEmail').disabled = true;
                 document.getElementById('btnVerifyEmail').innerText = "Verified ✅";
                 document.getElementById('btnVerifyEmail').disabled = true;
                 document.getElementById('btnVerifyEmail').classList.replace('bg-blue-600', 'bg-green-100');
                 document.getElementById('btnVerifyEmail').classList.add('text-green-700');
             } else {
-                showToast("Invalid OTP", "The code you entered is incorrect. Please try again.", "error");
+                otpStatus.innerText = "Invalid OTP. Please try again.";
+                otpStatus.classList.remove('hidden');
+                showToast("Invalid OTP", "The code you entered is incorrect.", "error");
             }
         }
         // --- End OTP Logic ---
