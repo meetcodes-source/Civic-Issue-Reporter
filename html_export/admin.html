@@ -400,8 +400,7 @@
                             <div
                                 class="flex w-full border-b border-slate-200 dark:border-slate-700 text-sm overflow-x-auto hide-scrollbar">
                                 <button id="filterAll"
-                                    class="flex-1 px-4 py-3 font-bold text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 whitespace-nowrap flex justify-center items-center">All
-                                    New</button>
+                                    class="flex-1 px-4 py-3 font-bold text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 whitespace-nowrap flex justify-center items-center">All</button>
                                 <button id="filterCritical"
                                     class="flex-1 px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent whitespace-nowrap flex justify-center items-center"><span
                                         class="flex items-center"><i data-lucide="alert-triangle"
@@ -1644,7 +1643,7 @@
                     const trackingId = (report.report_id || report.id).substring(0, 13).toUpperCase();
                     const timeAgo = formatTimeAgo(report.created_at);
 
-                    const locationDisplay = report.location_text && report.location_text.trim() !== '' ? report.location_text : 'GPS Configured';
+                    const locationDisplay = report.full_address && report.full_address.trim() !== '' ? report.full_address : 'GPS Configured';
 
                     html += `
                         <div onclick="openReportModal('${report.id || report.report_id}')" class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-l-4 ${borderClass} group">
@@ -1682,7 +1681,7 @@
                     dashFiltered = dashFiltered.filter(r => {
                         const idMatch = (r.report_id || r.id).toLowerCase().includes(searchQuery);
                         const descMatch = (r.description || '').toLowerCase().includes(searchQuery);
-                        const locMatch = (r.location_text || '').toLowerCase().includes(searchQuery);
+                        const locMatch = (r.full_address || '').toLowerCase().includes(searchQuery);
                         const catMatch = (r.category || '').toLowerCase().includes(searchQuery);
                         return idMatch || descMatch || locMatch || catMatch;
                     });
@@ -1690,7 +1689,7 @@
 
                 if (currentStateFilter !== 'all') {
                     dashFiltered = dashFiltered.filter(r => {
-                        const locText = (r.location_text || '').toLowerCase();
+                        const locText = (r.full_address || '').toLowerCase();
                         return locText.includes(currentStateFilter.toLowerCase());
                     });
                 }
@@ -1813,7 +1812,7 @@
                     }
                 } else {
                     gpsEl.innerText = 'No GPS Data';
-                    addressEl.innerText = report.location_text || 'GPS Generated Location';
+                    addressEl.innerText = report.full_address || 'GPS Generated Location';
                 }
 
                 // Photos
