@@ -246,31 +246,29 @@
             console.log("Generated OTP:", generatedOTP, "Expires at:", expirationTime);
 
             try {
-                // EmailJS Send with multiple aliases for easier template setup
+                // EmailJS Send with extremely unique variable name to avoid conflicts
                 const templateParams = {
                     to_email: email,
-                    otp_code: generatedOTP,
-                    otp: generatedOTP,
+                    verification_code: generatedOTP, // This is the primary one we'll use
+                    otp: generatedOTP,               // Backups
                     user_otp: generatedOTP,
-                    OTP: generatedOTP,
-                    verification_code: generatedOTP,
                     code: generatedOTP,
                     time: expirationTime
                 };
-                console.log("------------------------------------------");
-                console.log("Sending EmailJS OTP request:");
-                console.log("Service ID:", SERVICE_ID);
-                console.log("Template ID:", TEMPLATE_ID);
-                console.log("OTP Value:", generatedOTP);
-                console.log("Full Params:", templateParams);
-                console.log("------------------------------------------");
+                console.table({
+                    "Recipient": email,
+                    "OTP Code": generatedOTP,
+                    "Time": expirationTime,
+                    "Service ID": SERVICE_ID,
+                    "Template ID": TEMPLATE_ID
+                });
 
                 await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
 
                 document.getElementById('otpInputGroup').classList.remove('hidden');
                 document.getElementById('btnVerifyEmail').innerText = "Resend";
                 document.getElementById('btnVerifyEmail').disabled = false;
-                alert("OTP Sent! \n\nCheck your email for code: " + generatedOTP + "\n\n(If the email arrives without this code, please re-type {{otp}} in your EmailJS template)");
+                alert("OTP Prepared! \n\nSending code: " + generatedOTP + "\n\nIf the email arrives blank, please change the tag in your EmailJS template to {{verification_code}}");
             } catch (err) {
                 console.error("EmailJS Error:", err);
                 const errorDetail = err.text || err.message || JSON.stringify(err);
