@@ -45,6 +45,72 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            min-width: 300px;
+            max-width: 400px;
+            background: white;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-left: 4px solid #cbd5e1;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-success {
+            border-left-color: #10b981;
+        }
+
+        .toast-error {
+            border-left-color: #ef4444;
+        }
+
+        .toast-info {
+            border-left-color: #3b82f6;
+        }
+
+        .toast-icon {
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        .toast-content {
+            flex-grow: 1;
+        }
+
+        .toast-title {
+            font-weight: 700;
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        .toast-message {
+            font-size: 0.8125rem;
+            color: #64748b;
+            line-height: 1.25;
+        }
     </style>
 </head>
 
@@ -55,6 +121,9 @@
             document.documentElement.classList.add('dark');
         }
     </script>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
 
     <!-- Signup Container -->
@@ -229,10 +298,42 @@
         const SERVICE_ID = "service_5j0ex6q";
         const TEMPLATE_ID = "template_4v57xfb"; // Reverting to the ID that was successfully sending emails
 
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type} animate-in slide-in-from-right`;
+
+            let icon = 'info';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'alert-circle';
+
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i data-lucide="${icon}" class="w-6 h-6 ${type === 'success' ? 'text-emerald-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Hide and remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
         async function sendOTP() {
             const email = document.getElementById('signupEmail').value;
             if (!email || !email.includes('@')) {
-                alert("Please enter a valid email address first.");
+                showToast("Invalid Email", "Please enter a valid email address first.", "error");
                 return;
             }
 
@@ -268,11 +369,11 @@
                 document.getElementById('otpInputGroup').classList.remove('hidden');
                 document.getElementById('btnVerifyEmail').innerText = "Resend";
                 document.getElementById('btnVerifyEmail').disabled = false;
-                alert("OTP sent! Please check your email.");
+                showToast("OTP Sent", "Six-digit verification code has been sent to your email.", "success");
             } catch (err) {
                 console.error("EmailJS Error:", err);
                 const errorDetail = err.text || err.message || JSON.stringify(err);
-                alert("Failed to send email. \n\nError: " + errorDetail + "\n\nTip: Check if your Vercel domain is added to 'Authorized Domains' in your EmailJS Account Settings.");
+                showToast("Email Error", "Failed to send OTP. Please check your EmailJS settings.", "error");
                 btn.innerText = "Verify";
                 btn.disabled = false;
             }
@@ -282,7 +383,7 @@
             const userOTP = document.getElementById('emailOTP').value;
             if (userOTP === generatedOTP) {
                 isEmailVerified = true;
-                alert("Email verified successfully!");
+                showToast("Email Verified", "Your email has been successfully verified.", "success");
                 document.getElementById('otpInputGroup').classList.add('hidden');
                 document.getElementById('signupEmail').disabled = true;
                 document.getElementById('btnVerifyEmail').innerText = "Verified ✅";
@@ -290,7 +391,7 @@
                 document.getElementById('btnVerifyEmail').classList.replace('bg-blue-600', 'bg-green-100');
                 document.getElementById('btnVerifyEmail').classList.add('text-green-700');
             } else {
-                alert("Invalid OTP. Please try again.");
+                showToast("Invalid OTP", "The code you entered is incorrect. Please try again.", "error");
             }
         }
         // --- End OTP Logic ---

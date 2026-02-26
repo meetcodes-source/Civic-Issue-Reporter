@@ -72,6 +72,80 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            top: 5rem;
+            /* Below the top bar */
+            right: 1.5rem;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            min-width: 320px;
+            max-width: 440px;
+            background: white;
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transform: translateX(130%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .dark .toast {
+            background: rgba(30, 41, 59, 0.95);
+            border-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast-success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast-info {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .toast-title {
+            font-weight: 800;
+            font-size: 0.9375rem;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .dark .toast-title {
+            color: #f1f5f9;
+        }
+
+        .toast-message {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .dark .toast-message {
+            color: #94a3b8;
+        }
     </style>
 </head>
 
@@ -79,6 +153,9 @@
     <script>
         if (localStorage.getItem('civic_theme') === 'dark') document.documentElement.classList.add('dark');
     </script>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <!-- Sidebar -->
     <aside id="adminSidebar"
@@ -92,7 +169,8 @@
                     <i data-lucide="shield" class="text-white w-5 h-5"></i>
                 </div>
                 <div>
-                    <span class="text-lg font-black tracking-tight leading-none block text-white">Civic Issues Reporter</span>
+                    <span class="text-lg font-black tracking-tight leading-none block text-white">Civic Issues
+                        Reporter</span>
                     <span
                         class="text-[10px] text-blue-100 dark:text-blue-400 font-bold tracking-widest uppercase">Admin</span>
                 </div>
@@ -1097,7 +1175,7 @@
                     security. We will text you a code when logging in from a new device.</p>
                 <div class="pt-4">
                     <button
-                        onclick="document.getElementById('adminTwoFactorModal').classList.add('hidden'); alert('2FA feature coming soon!');"
+                        onclick="document.getElementById('adminTwoFactorModal').classList.add('hidden'); showToast('Coming Soon', '2FA feature is currently under development.', 'info');"
                         class="bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold shadow-md transition-all w-full">
                         Set up 2FA
                     </button>
@@ -1412,6 +1490,37 @@
     <!-- Initialization Scripts -->
     <script>
         // Init Lucide Icons
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            let icon = 'info';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'alert-circle';
+
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i data-lucide="${icon}" class="w-6 h-6 ${type === 'success' ? 'text-emerald-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Hide and remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 5000);
+        }
 
         // -------------------------------------------------------------
         // Leaflet Map Initialization & Supabase Data Fetching
@@ -2022,7 +2131,7 @@
 
                 if (error) {
                     console.error('Update error:', error);
-                    alert("Error updating status.");
+                    showToast("Update Failed", "Error updating status.", "error");
                 } else {
                     document.getElementById('modalUpdateFeedback').classList.remove('hidden');
                     // Notification Logic (Mock Console Log)
@@ -2461,15 +2570,15 @@
                 e.preventDefault();
                 const p1 = document.getElementById('adminNewPass').value;
                 const p2 = document.getElementById('adminConfirmPass').value;
-                if (p1 !== p2) { alert('Passwords do not match'); return; }
+                if (p1 !== p2) { showToast('Mismatch', 'Passwords do not match', 'error'); return; }
 
                 try {
                     const { error } = await supabaseClient.auth.updateUser({ password: p1 });
                     if (error) throw error;
-                    alert('Password updated successfully!');
+                    showToast('Success', 'Password updated successfully!', 'success');
                     e.target.reset();
                 } catch (err) {
-                    alert('Error: ' + err.message);
+                    showToast('Error', 'Error: ' + err.message, 'error');
                 }
             };
 
@@ -2854,7 +2963,7 @@
                     .eq('id', id);
 
                 if (error) {
-                    alert('Error saving reply: ' + error.message);
+                    showToast('Error', 'Error saving reply: ' + error.message, 'error');
                 } else {
                     // Update local data
                     const item = allFeedbackData.find(f => f.id === id || f.id == id);
@@ -2876,7 +2985,7 @@
                         .or(`report_id.eq.${report_id},id.eq.${report_id}`)
                         .single();
                     if (data) openReportDetails(data);
-                    else alert('Report not found.');
+                    else showToast('Not Found', 'Report not found.', 'error');
                 }
             };
 
