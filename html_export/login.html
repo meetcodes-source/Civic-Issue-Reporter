@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Login</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 flex items-center justify-center p-4 transition-colors duration-200">
+    <script>
+        // Apply theme immediately on load to prevent flash
+        if (localStorage.getItem('civic_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+
+    <!-- Login Container -->
+    <div id="loginContainer" class="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 relative">
+
+        <!-- Top Header Row -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-blue-600">Login</h1>
+            <a href="index.html" class="text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </a>
+        </div>
+
+        <!-- Role Toggle -->
+        <div class="flex bg-slate-100 rounded-full p-1 mb-8 w-full relative" id="roleTabs">
+            <button id="btnCitizen" type="button" onclick="setRole('citizen')"
+                class="px-6 py-2 rounded-full text-sm font-bold transition-all bg-blue-600 text-white shadow-md w-1/2">
+                Citizen
+            </button>
+            <button id="btnAuthority" type="button" onclick="setRole('authority')"
+                class="px-6 py-2 rounded-full text-sm font-bold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200 w-1/2">
+                Authority
+            </button>
+        </div>
+
+        <!-- Login Form -->
+        <form class="space-y-6">
+            <div>
+                <label class="block text-slate-700 font-semibold mb-2">Email or Phone</label>
+                <input type="email" id="loginEmail" placeholder="you@example.com"
+                    class="w-full p-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                    required />
+            </div>
+            <div>
+                <label class="block text-slate-700 font-semibold mb-2">Password</label>
+                <input type="password" id="loginPassword" placeholder="••••••••"
+                    class="w-full p-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                    required />
+            </div>
+
+            <button type="submit"
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-2xl text-lg shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                onclick="handleLogin(event)">
+                Sign in
+            </button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-slate-600">
+            New to the portal?
+            <a href="signup.html" class="text-blue-600 font-bold hover:underline">Register here</a>
+        </p>
+    </div>
+
+    <!-- Success View (Hidden by default) -->
+    <div id="successContainer"
+        class="hidden flex-col items-center justify-center animate-in zoom-in duration-500 py-12 w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl p-10 text-center relative mx-auto aspect-square">
+        <div
+            class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mb-6 text-green-600 shadow-lg shadow-green-100 mx-auto">
+            <i data-lucide="check-circle" class="w-12 h-12 animate-bounce"></i>
+        </div>
+        <h2 class="text-3xl font-black text-slate-900 mb-2">Login Successful!</h2>
+        <p class="text-slate-500 text-center text-lg">
+            Welcome back. <br />
+            Taking you to your <b id="redirectPortalName">Portal</b>...
+        </p>
+        <div class="mt-8 flex gap-2 justify-center">
+            <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style="animation-delay: -0.3s"></div>
+            <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style="animation-delay: -0.15s"></div>
+            <div class="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></div>
+        </div>
+    </div>
+
+    <!-- Error View (Hidden by default) -->
+    <div id="errorContainer"
+        class="hidden flex-col items-center justify-center animate-in zoom-in duration-500 py-12 w-full max-w-sm bg-white rounded-[2.5rem] shadow-2xl p-10 text-center relative mx-auto aspect-square">
+        <div
+            class="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6 text-red-600 shadow-lg shadow-red-100 mx-auto">
+            <i data-lucide="x-circle" class="w-12 h-12 animate-pulse"></i>
+        </div>
+        <h2 class="text-3xl font-black text-slate-900 mb-4">Login Failed</h2>
+        <p id="errorMessageText" class="text-slate-500 text-center text-lg mb-8">
+            Invalid email or password.
+        </p>
+        <button
+            onclick="document.getElementById('errorContainer').classList.add('hidden'); document.getElementById('loginContainer').classList.remove('hidden');"
+            class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all">
+            Try Again
+        </button>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        function showError(message) {
+            document.getElementById('loginContainer').classList.add('hidden');
+            document.getElementById('errorMessageText').innerText = message;
+            document.getElementById('errorContainer').classList.remove('hidden');
+            // We need to re-initialize lucide icons if new DOM elements with data-lucide appear
+            // However, since errorContainer is already in DOM, icons are already created.
+        }
+
+        let selectedRole = 'citizen';
+
+        function setRole(role) {
+            selectedRole = role;
+            const btnCitizen = document.getElementById('btnCitizen');
+            const btnAuthority = document.getElementById('btnAuthority');
+
+            if (role === 'citizen') {
+                btnCitizen.className = "px-6 py-2 rounded-full text-sm font-bold transition-all bg-blue-600 text-white shadow-md w-1/2";
+                btnAuthority.className = "px-6 py-2 rounded-full text-sm font-bold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200 w-1/2";
+            } else {
+                btnAuthority.className = "px-6 py-2 rounded-full text-sm font-bold transition-all bg-blue-600 text-white shadow-md w-1/2";
+                btnCitizen.className = "px-6 py-2 rounded-full text-sm font-bold transition-all text-slate-500 hover:text-slate-700 hover:bg-slate-200 w-1/2";
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showError("Please enter both email and password.");
+                return;
+            }
+
+            const _supabaseUrl = 'https://lospwkmfoutyhfjlxqll.supabase.co';
+            const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvc3B3a21mb3V0eWhmamx4cWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MzgzMDAsImV4cCI6MjA4NzAxNDMwMH0.cdmBXofteICV2dRD2W-p06t6PPxbZebecipQyf7qyF8';
+            const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+
+            let authSuccess = false;
+            let targetPage = selectedRole === 'authority' ? 'admin.html' : 'dashboard.html';
+
+            // 1. Try Supabase Auth (for manually created accounts in Auth dashboard)
+            const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+            let userRole = null;
+
+            if (!authError && authData.user) {
+                authSuccess = true;
+                // Fetch role from DB to ensure RBAC
+                const { data: authDbUser } = await supabaseClient.from('users').select('role').eq('email', email).maybeSingle();
+                if (authDbUser && authDbUser.role) {
+                    userRole = authDbUser.role;
+                    localStorage.setItem('civic_role', userRole);
+                }
+            } else {
+                console.warn("Supabase Auth failed (possibly unconfirmed email). Falling back to public.users table...", authError);
+
+                // 2. Fallback to public.users table (for Citizens & non-confirmed accounts)
+                const { data: dbUser, error: dbError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .eq('password', password)
+                    .maybeSingle();
+
+                if (dbUser) {
+                    authSuccess = true;
+                    userRole = dbUser.role;
+                    // Mock session persistence so other pages work
+                    localStorage.setItem('civic_email', email);
+                    localStorage.setItem('civic_password', password);
+                    if (userRole) localStorage.setItem('civic_role', userRole);
+                } else {
+                    // 3. Last resort fallback to local storage (for legacy mock flows if DB is wiped)
+                    if (email === localStorage.getItem('civic_email') && password === localStorage.getItem('civic_password')) {
+                        authSuccess = true;
+                        userRole = localStorage.getItem('civic_role');
+                    }
+                }
+            }
+
+            // RBAC Enforcements
+            if (authSuccess) {
+                // Determine implicit role if missing (e.g., legacy mock user without a role)
+                if (!userRole) userRole = 'Citizen';
+                const roleLower = userRole.toLowerCase();
+
+                if (selectedRole === 'authority' && roleLower !== 'admin') {
+                    showError("Access Denied: You do not have Administrator privileges.");
+                    return;
+                }
+
+                if (selectedRole === 'citizen' && roleLower === 'admin') {
+                    showError("Access Denied: Administrators must use the Authority portal.");
+                    return;
+                }
+
+                document.getElementById('redirectPortalName').innerText = selectedRole === 'authority' ? 'Admin Dashboard' : 'Dashboard';
+                document.getElementById('loginContainer').classList.add('hidden');
+                document.getElementById('successContainer').classList.remove('hidden');
+                setTimeout(() => {
+                    window.location.href = targetPage;
+                }, 2000);
+            } else {
+                let errorMsg = "Invalid email or password. Please make sure you have registered first!";
+                if (authError && authError.message) {
+                    errorMsg += " (" + authError.message + ")";
+                }
+                showError(errorMsg);
+            }
+        }
+    </script>
+</body>
+
+</html>

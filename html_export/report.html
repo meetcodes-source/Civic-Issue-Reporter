@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Report Issue</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col font-sans text-slate-900 dark:text-slate-100 transition-colors duration-200">
+    <script>
+        if (localStorage.getItem('civic_theme') === 'dark') document.documentElement.classList.add('dark');
+    </script>
+
+    <!-- Navbar -->
+    <nav
+        class="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3 gap-2" cursor="pointer"
+                    onclick="window.location.href='index.html'">
+                    <div class="bg-blue-600 p-2 rounded-xl">
+                        <i data-lucide="map-pin" class="text-white w-6 h-6"></i>
+                    </div>
+                    <span
+                        class="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight cursor-pointer">CivicConnect</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button
+                        class="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 font-semibold px-4 py-2 flex items-center space-x-2 transition-colors"
+                        onclick="window.history.back()">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Back</span>
+                    </button>
+                    <div
+                        class="hidden sm:flex items-center space-x-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-full font-medium border border-transparent dark:border-slate-700">
+                        <i data-lucide="user" class="w-4 h-4"></i>
+                        <span>citizen@example.com</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden"
+            id="reportFormContainer">
+
+            <div class="p-6 md:p-8 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <h1
+                    class="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 tracking-tight flex items-center">
+                    <i data-lucide="alert-triangle" class="w-8 h-8 mr-3 text-amber-500"></i>
+                    Report a Civic Issue
+                </h1>
+                <p class="text-slate-500 dark:text-slate-400 mt-2">Provide details about the problem to help authorities
+                    resolve it quickly.
+                </p>
+            </div>
+
+            <form class="p-6 md:p-8 space-y-8" id="issueForm">
+
+                <!-- 1. Category -->
+                <div>
+                    <label class="flex text-lg font-bold text-slate-900 dark:text-slate-100 mb-3 items-center">
+                        <span
+                            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">1</span>
+                        Issue Category
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Radio buttons acting as Tailwind styled cards -->
+                        <label class="cursor-pointer">
+                            <input type="radio" name="category" value="Pothole" class="peer sr-only" required>
+                            <div
+                                class="p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl peer-checked:border-blue-500 dark:peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-center">
+                                <span class="block text-2xl mb-2">🕳️</span>
+                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Pothole</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="category" value="Streetlight" class="peer sr-only">
+                            <div
+                                class="p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl peer-checked:border-blue-500 dark:peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-center">
+                                <span class="block text-2xl mb-2">💡</span>
+                                <span
+                                    class="text-sm font-semibold text-slate-700 dark:text-slate-300">Streetlight</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="category" value="Garbage" class="peer sr-only">
+                            <div
+                                class="p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl peer-checked:border-blue-500 dark:peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-center">
+                                <span class="block text-2xl mb-2">🗑️</span>
+                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Garbage</span>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="category" value="Water" class="peer sr-only">
+                            <div
+                                class="p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl peer-checked:border-blue-500 dark:peer-checked:border-blue-500 peer-checked:bg-blue-50 dark:peer-checked:bg-blue-900/20 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-center">
+                                <span class="block text-2xl mb-2">💧</span>
+                                <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Water Leak</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 1.5 Priority Level -->
+                <div>
+                    <label class="flex text-lg font-bold text-slate-900 dark:text-slate-100 mb-3 items-center">
+                        <span
+                            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm"><i
+                                data-lucide="flag" class="w-4 h-4"></i></span>
+                        Priority Level
+                    </label>
+                    <div class="relative">
+                        <select name="priority" id="prioritySelect"
+                            class="w-full appearance-none p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-900 dark:text-slate-100 font-semibold cursor-pointer transition-all">
+                            <option value="Low">Low - Not urgent, but needs attention eventually</option>
+                            <option value="Medium" selected>Medium - Noticeable issue impacting convenience</option>
+                            <option value="High">High - Significant issue, potential hazard</option>
+                            <option value="Critical">Critical - Immediate danger to life or property</option>
+                        </select>
+                        <div
+                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                            <i data-lucide="chevron-down" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Description -->
+                <div>
+                    <label class="flex text-lg font-bold text-slate-900 dark:text-slate-100 mb-3 items-center">
+                        <span
+                            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">2</span>
+                        Description details
+                    </label>
+                    <textarea name="description" rows="4"
+                        class="w-full p-4 border-2 border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 text-slate-900 dark:text-slate-100 transition-all"
+                        placeholder="Please describe the issue in detail, eg. 'large pothole in the middle lane causing cars to swerve...'"
+                        required></textarea>
+                </div>
+
+                <!-- 3. Location Map -->
+                <div>
+                    <label class="flex text-lg font-bold text-slate-900 dark:text-slate-100 mb-3 items-center">
+                        <span
+                            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">3</span>
+                        Pinpoint Location
+                    </label>
+                    <div
+                        class="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 border border-slate-200 dark:border-slate-700">
+                        <div id="map"
+                            class="h-64 rounded-lg bg-slate-200 dark:bg-slate-700 mb-3 border border-slate-300 dark:border-slate-600 relative overflow-hidden z-0">
+                            <!-- Leaflet Map attaches here -->
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 opacity-80"
+                                id="mapLoading">
+                                <span class="flex items-center text-slate-500 dark:text-slate-400 font-semibold"><i
+                                        data-lucide="loader" class="w-5 h-5 mr-2 animate-spin"></i> Getting
+                                    GPS...</span>
+                            </div>
+                        </div>
+                        <p class="text-sm font-medium text-slate-600 dark:text-slate-400 flex items-center"
+                            id="addressDisplay">
+                            <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-blue-500"></i>
+                            Waiting for GPS lock...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 4. Photo Evidence -->
+                <div>
+                    <label class="flex text-lg font-bold text-slate-900 dark:text-slate-100 mb-3 items-center">
+                        <span
+                            class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">4</span>
+                        Photo Evidence
+                    </label>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="dropzone-file" id="dropzone-container"
+                            class="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-300 dark:border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all hover:border-blue-400 dark:hover:border-blue-500 group overflow-hidden relative">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4"
+                                id="dropzone-content">
+                                <i data-lucide="upload-cloud"
+                                    class="w-10 h-10 mb-3 text-slate-400 dark:text-slate-500 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors"></i>
+                                <p class="mb-1 text-sm text-slate-500 dark:text-slate-400"><span class="font-bold">Click
+                                        to upload</span> or
+                                    drag and drop</p>
+                                <p class="text-xs text-slate-400 dark:text-slate-500">SVG, PNG, JPG or GIF (MAX. 5MB)
+                                </p>
+                            </div>
+                            <input id="dropzone-file" type="file" class="hidden" accept="image/*"
+                                onchange="previewImage(event)" />
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg dark:shadow-blue-900/20 transition-all hover:-translate-y-0.5 flex items-center justify-center space-x-2"
+                        onclick="handleReportSubmit(event)">
+                        <i data-lucide="send"></i>
+                        <span>Submit Civic Report</span>
+                    </button>
+                    <p class="text-center text-xs text-slate-400 mt-4">By submitting, you verify that this report is
+                        visually accurate to your best knowledge.</p>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Widget (Hidden until submitted) -->
+        <div id="successWidget"
+            class="hidden bg-white rounded-2xl shadow-xl border border-green-200 p-10 text-center animate-in zoom-in duration-500 max-w-md mx-auto mt-20">
+            <div
+                class="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600 shadow-lg shadow-green-100">
+                <i data-lucide="check-circle" class="w-12 h-12"></i>
+            </div>
+            <h2 class="text-3xl font-black text-slate-900 mb-2">Report Filed!</h2>
+            <p class="text-slate-500 mb-8">Your ticket ID is <b>CIV-TEST-8742</b>. Authorities have been notified.</p>
+            <button onclick="window.location.href='dashboard.html'"
+                class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition-all">
+                Return to Dashboard
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Map Script logic & Icons -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Initialize Supabase Client
+        const _supabaseUrl = 'https://lospwkmfoutyhfjlxqll.supabase.co';
+        const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvc3B3a21mb3V0eWhmamx4cWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MzgzMDAsImV4cCI6MjA4NzAxNDMwMH0.cdmBXofteICV2dRD2W-p06t6PPxbZebecipQyf7qyF8';
+        const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+
+        lucide.createIcons();
+
+        // Global variables for database submission
+        let currentLat = null;
+        let currentLng = null;
+        let currentImageData = null;
+
+        // --- Image Preview Logic ---
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                currentImageData = e.target.result; // Save Data URL for DB insert
+                const dropzoneContent = document.getElementById('dropzone-content');
+                dropzoneContent.innerHTML = `
+                    <div class="absolute inset-0 w-full h-full">
+                        <img src="${e.target.result}" class="w-full h-full object-cover opacity-90" alt="Evidence Preview" />
+                        <div class="absolute inset-0 bg-black/40 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <i data-lucide="refresh-cw" class="w-8 h-8 text-white mb-2"></i>
+                            <span class="text-white font-bold text-sm">Change Photo</span>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // --- Auth Check & Initial Render ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const map = L.map('map').setView([20.5937, 78.9629], 5); // Default to India center
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            let marker;
+
+            // Real Browser GPS Geolocation Request
+            if ("geolocation" in navigator) {
+                // Requesting state
+                document.getElementById('addressDisplay').innerHTML = `
+                    <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-blue-500"></i>
+                    Requesting location permissions...
+                `;
+                lucide.createIcons();
+
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        // Permission Granted
+                        document.getElementById('mapLoading').classList.add('hidden');
+
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        // Save globally for database submission
+                        currentLat = lat;
+                        currentLng = lng;
+
+                        // Center Map and Drop Marker
+                        map.setView([lat, lng], 15);
+                        marker = L.marker([lat, lng]).addTo(map);
+
+                        // Temporarily show coordinates while fetching address
+                        document.getElementById('addressDisplay').innerHTML = `
+                            <i data-lucide="loader" class="w-4 h-4 mr-2 text-blue-500 animate-spin"></i>
+                            Resolving address...
+                        `;
+                        lucide.createIcons();
+
+                        try {
+                            // Reverse Geocoding using OpenStreetMap Nominatim API
+                            // Nominatim ToS requires identification. Browsers block custom User-Agent headers, so we pass email as a URL parameter instead.
+                            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en&email=meet@example.com`);
+
+                            if (!response.ok) throw new Error("HTTP Error: " + response.status);
+                            const data = await response.json();
+
+                            if (data && data.address) {
+                                // Log to find missing tags in the console
+                                console.log("Nominatim Address Object:", data.address);
+
+                                const addr = data.address;
+
+                                // Extremely robust hierarchical fallback for Indian and global micro-locations (Area name)
+                                const area = addr.suburb || addr.neighbourhood || addr.residential || addr.quarter || addr.allotments || addr.village || addr.road || addr.hamlet || addr.isolated_dwelling || addr.city_district || "";
+                                const city = addr.city || addr.town || addr.municipality || "";
+                                const district = addr.state_district || addr.county || "";
+                                const state = addr.state || "";
+                                const pincode = addr.postcode || "";
+
+                                // Filter out empty strings and effectively join them
+                                const addressParts = [area, city, district, state].filter(Boolean);
+                                // Remove duplicates gracefully (eg. if city and district are the same)
+                                const uniqueAddressParts = [...new Set(addressParts)];
+
+                                let formattedAddress = uniqueAddressParts.join(', ');
+
+                                // Ultimate fallback if our manual parsing failed to grab an Area entirely, use the raw display_name
+                                if (!area && data.display_name) {
+                                    formattedAddress = data.display_name;
+                                }
+
+                                if (pincode && !formattedAddress.includes(pincode)) {
+                                    formattedAddress += ` - ${pincode}`;
+                                }
+
+                                document.getElementById('addressDisplay').innerHTML = `
+                                    <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-green-500"></i>
+                                    Location acquired: ${formattedAddress}
+                                `;
+                            } else {
+                                throw new Error("No address found in response");
+                            }
+                        } catch (err) {
+                            console.error("Reverse geocoding failed:", err);
+                            // Fallback to coordinates if API fails
+                            document.getElementById('addressDisplay').innerHTML = `
+                                <i data-lucide="map-pin" class="w-4 h-4 mr-2 text-green-500"></i>
+                                Location acquired: Lat ${lat.toFixed(4)}, Lng ${lng.toFixed(4)}
+                            `;
+                        }
+                        lucide.createIcons();
+                    },
+                    (error) => {
+                        // Permission Denied or Failed
+                        document.getElementById('mapLoading').classList.add('hidden');
+                        let errorMessage = "Unable to retrieve your location.";
+                        if (error.code === 1) errorMessage = "Location permission denied.";
+                        else if (error.code === 2) errorMessage = "Position unavailable. Network or satellite issues.";
+                        else if (error.code === 3) errorMessage = "Location request timed out.";
+
+                        document.getElementById('addressDisplay').innerHTML = `
+                            <i data-lucide="alert-triangle" class="w-4 h-4 mr-2 text-red-500"></i>
+                            ${errorMessage} Please enable GPS.
+                        `;
+                        lucide.createIcons();
+
+                        // Fallback generic map view
+                        map.setView([20.5937, 78.9629], 5);
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            } else {
+                document.getElementById('mapLoading').classList.add('hidden');
+                document.getElementById('addressDisplay').innerHTML = `
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-2 text-red-500"></i>
+                    Geolocation is not supported by your browser.
+                `;
+                lucide.createIcons();
+            }
+        });
+
+        // Supabase Database Upload Logic
+        async function handleReportSubmit(e) {
+            e.preventDefault();
+
+            // 1. Get Category
+            const categoryInput = document.querySelector('input[name="category"]:checked');
+            if (!categoryInput) { alert("Please select an issue category."); return; }
+            const category = categoryInput.value;
+
+            // 2. Get Priority
+            const prioritySelect = document.getElementById('prioritySelect');
+            const priority = prioritySelect ? prioritySelect.value : 'Medium';
+
+            // 3. Get Description
+            const description = document.querySelector('textarea[name="description"]').value;
+            if (!description) { alert("Please provide a description."); return; }
+
+            // 4. Get Location
+            const addressDisplay = document.getElementById('addressDisplay').innerText;
+            let locationText = "Location pending";
+            if (addressDisplay.includes("Location acquired:")) {
+                locationText = addressDisplay.split("Location acquired:")[1].trim();
+            }
+
+            // Generate App Ticket ID for UI Display
+            const ticketId = 'CIV-' + new Date().getFullYear() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+
+            // Get logged in user email
+            const submittedBy = localStorage.getItem('civic_email') || 'anonymous@citizen.org';
+
+            // Build payload matching exact user Supabase column names
+            const newReport = {
+                report_id: ticketId,
+                category: category,
+                priority: priority,            // New Priority Field
+                description: description,
+                full_address: locationText,
+                latitude: currentLat || 0,     // Required by DB schema
+                longitude: currentLng || 0,    // Required by DB schema
+                status: 'Pending',
+                user_email: submittedBy,
+                image_url: currentImageData    // Save base64 image data to DB
+            };
+
+            // Visually change the button to show loading
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalBtnHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<i data-lucide="loader" class="animate-spin mr-2"></i> Uploading to Database...`;
+            submitBtn.disabled = true;
+            lucide.createIcons();
+
+            try {
+                // Perform real INSERT to Supabase
+                const { data, error } = await supabaseClient
+                    .from('reports') // Target the user's table
+                    .insert([newReport]);
+
+                if (error) {
+                    console.error("Supabase Insert Error:", error);
+                    alert("Database Error: " + error.message + "\n\n(Note: make sure your 'reports' table contains columns for ticket_id, category, description, location_text, status, and submitted_by)");
+
+                    // Reset button
+                    submitBtn.innerHTML = originalBtnHTML;
+                    submitBtn.disabled = false;
+                    return; // Stop execution on error
+                }
+
+                // If successful, continue with UI update
+                document.getElementById('reportFormContainer').classList.add('hidden');
+                const widget = document.getElementById('successWidget');
+                widget.innerHTML = widget.innerHTML.replace('CIV-TEST-8742', ticketId);
+                widget.classList.remove('hidden');
+
+            } catch (err) {
+                console.error("Network Error:", err);
+                alert("Network failure. Could not connect to Supabase database.");
+                submitBtn.innerHTML = originalBtnHTML;
+                submitBtn.disabled = false;
+            }
+        }
+    </script>
+</body>
+
+</html>

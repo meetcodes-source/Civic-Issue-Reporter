@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Citizen Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 flex overflow-hidden transition-colors duration-200">
+    <script>
+        // Apply theme immediately on load to prevent flash
+        if (localStorage.getItem('civic_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+
+    <!-- Mobile Sidebar Backdrop -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-slate-900/50 z-40 lg:hidden hidden" onclick="toggleSidebar()">
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar"
+        class="fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 lg:static lg:flex lg:flex-col transition-transform duration-300 ease-in-out">
+
+        <!-- App Identity -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-200">
+            <div class="flex items-center space-x-3 gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+                <div class="bg-blue-600 p-1.5 rounded-xl">
+                    <i data-lucide="map-pin" class="text-white w-5 h-5"></i>
+                </div>
+                <span class="text-xl font-black text-slate-900 tracking-tight">CivicConnect</span>
+            </div>
+            <!-- Mobile Close Button -->
+            <button class="lg:hidden ml-auto text-slate-500" onclick="toggleSidebar()">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Main Nav Links -->
+        <div class="flex-grow overflow-y-auto px-4 py-6 space-y-1">
+            <h3 class="px-3 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Main Menu</h3>
+
+            <a href="dashboard.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-700 font-semibold group transition-all">
+                <i data-lucide="home" class="w-5 h-5"></i>
+                <span>Home</span>
+            </a>
+
+            <a href="my-reports.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900 group transition-all">
+                <i data-lucide="file-text" class="w-5 h-5 text-slate-400 group-hover:text-blue-600"></i>
+                <span>My Reports</span>
+            </a>
+
+            <div class="pt-6 pb-2">
+                <h3 class="px-3 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Platform</h3>
+            </div>
+
+            <a href="#"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900 group transition-all"
+                onclick="document.getElementById('aboutModal').classList.remove('hidden')">
+                <i data-lucide="info" class="w-5 h-5 text-slate-400 group-hover:text-blue-600"></i>
+                <span>About</span>
+            </a>
+
+            <a href="#"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900 group transition-all"
+                onclick="document.getElementById('contactModal').classList.remove('hidden')">
+                <i data-lucide="phone" class="w-5 h-5 text-slate-400 group-hover:text-blue-600"></i>
+                <span>Contact Us</span>
+            </a>
+        </div>
+
+        <!-- Bottom Account Nav -->
+        <div class="p-4 border-t border-slate-200 space-y-1">
+            <a href="profile.html"
+                class="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900 group transition-all">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="user" class="w-5 h-5 text-slate-400 group-hover:text-blue-600"></i>
+                    <span>Profile</span>
+                </div>
+                <span class="w-2 h-2 rounded-full bg-green-500"></span> <!-- online marker -->
+            </a>
+            <a href="settings.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 font-medium hover:bg-slate-50 hover:text-slate-900 group transition-all">
+                <i data-lucide="settings" class="w-5 h-5 text-slate-400 group-hover:text-blue-600"></i>
+                <span>Settings</span>
+            </a>
+            <a href="index.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-500 font-medium hover:bg-red-50 group transition-all mt-2">
+                <i data-lucide="log-out" class="w-5 h-5 opacity-70 group-hover:opacity-100"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+
+    </aside>
+
+    <!-- Main Content Area Wrapper -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+
+        <!-- Top Header Panel (Mobile mostly) -->
+        <header
+            class="bg-white shadow-sm border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">
+            <div class="flex items-center gap-4">
+                <button class="text-slate-500 hover:text-slate-700 focus:outline-none lg:hidden -ml-2 p-2"
+                    onclick="toggleSidebar()">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h2 class="text-xl font-bold text-slate-800 lg:hidden">Dashboard</h2>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div
+                    class="flex items-center space-x-2 text-slate-600 bg-slate-100 px-4 py-1.5 rounded-full font-medium text-sm border border-slate-200">
+                    <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                    <span id="userEmailDisplay">citizen@example.com</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full block">
+            <div class="max-w-4xl mx-auto">
+
+                <!-- Header Breadcrumb & Actions -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <div class="flex items-center space-x-2 text-sm text-slate-500 font-medium mb-2">
+                            <a href="dashboard.html" class="hover:text-blue-600 transition-colors">Dashboard</a>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            <a href="my-reports.html" class="hover:text-blue-600 transition-colors">Reports</a>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                            <span class="text-slate-800 font-bold" id="headerReportId">Loading...</span>
+                        </div>
+                        <h1 class="text-3xl font-black text-slate-900 tracking-tight" id="headerReportTitle">Report
+                            Details</h1>
+                    </div>
+                </div>
+
+                <div id="loadingIndicator" class="flex flex-col items-center justify-center p-20 space-y-4">
+                    <i data-lucide="loader-2" class="w-10 h-10 animate-spin text-blue-500"></i>
+                    <p class="font-medium text-slate-500">Fetching report details...</p>
+                </div>
+
+                <div id="errorContainer"
+                    class="hidden p-8 text-center bg-red-50 border border-red-200 rounded-2xl mb-6">
+                    <i data-lucide="alert-circle" class="w-12 h-12 text-red-500 mx-auto mb-3 opacity-80"></i>
+                    <h2 class="text-lg font-bold text-red-800 mb-1">Report Not Found</h2>
+                    <p class="text-red-600 text-sm mb-4" id="errorMessage">The requested report could not be found or
+                        you do not have permission to view it.</p>
+                    <a href="dashboard.html"
+                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors">
+                        Return to Dashboard
+                    </a>
+                </div>
+
+                <!-- Main Report Details (Hidden until loaded) -->
+                <div id="reportContent" class="hidden space-y-6">
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                        <!-- Left Column: Primary Details -->
+                        <div class="lg:col-span-2 space-y-6">
+
+                            <!-- Image Container -->
+                            <div
+                                class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm relative group bg-slate-100 min-h-[300px] flex items-center justify-center">
+                                <i data-lucide="image" class="w-16 h-16 text-slate-300 absolute"
+                                    id="reportImagePlaceholder"></i>
+                                <img id="reportImage" src=""
+                                    class="w-full h-auto max-h-[500px] object-cover relative z-10 hidden"
+                                    alt="Report Evidence">
+
+                                <!-- Category Badge Overlay -->
+                                <div class="absolute top-4 left-4 z-20">
+                                    <span id="reportCategoryBadge"
+                                        class="px-3 py-1.5 rounded-lg text-sm font-bold tracking-wider uppercase bg-white/90 backdrop-blur text-slate-800 shadow-sm border border-slate-200/50 flex items-center">
+                                        <i data-lucide="tag" class="w-3.5 h-3.5 mr-1.5"></i> <span
+                                            id="reportCategoryText">Category</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Description Card -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Description
+                                </h3>
+                                <p id="reportDescription"
+                                    class="text-slate-800 text-lg leading-relaxed whitespace-pre-wrap">Loading
+                                    description...</p>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Meta & Location -->
+                        <div class="space-y-6">
+
+                            <!-- Status Card -->
+                            <div
+                                class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center">
+                                <h3
+                                    class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 w-full text-left">
+                                    Current Status</h3>
+                                <div id="reportStatusContainer"
+                                    class="w-full py-4 rounded-xl border-2 flex flex-col items-center justify-center bg-slate-50 border-slate-200 text-slate-700">
+                                    <i data-lucide="clock" class="w-8 h-8 mb-2" id="reportStatusIcon"></i>
+                                    <span class="font-black text-xl tracking-tight uppercase"
+                                        id="reportStatusText">PENDING</span>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-4 text-left w-full">Submitted on <span
+                                        id="reportDate" class="font-bold text-slate-700">...</span></p>
+                            </div>
+
+                            <!-- Location Card -->
+                            <div
+                                class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
+                                <div class="p-5 border-b border-slate-100 bg-slate-50/50">
+                                    <h3
+                                        class="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center">
+                                        <i data-lucide="map" class="w-4 h-4 mr-2 text-slate-400"></i> Location
+                                    </h3>
+                                </div>
+                                <div class="h-48 bg-slate-200 w-full relative z-0" id="detailMap">
+                                    <!-- Leaflet map goes here -->
+                                </div>
+                                <div class="p-5 flex items-start space-x-3 bg-white">
+                                    <i data-lucide="map-pin" class="w-5 h-5 text-blue-500 shrink-0 mt-0.5"></i>
+                                    <p id="reportAddress" class="text-sm text-slate-700 font-medium leading-snug">
+                                        Loading address...</p>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- About Modal (Chrome Style) -->
+    <div id="aboutModal"
+        class="fixed inset-0 bg-black/60 z-[100] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <!-- Modal Container -->
+        <div
+            class="bg-[#202124] w-full max-w-3xl rounded-2xl shadow-2xl border border-slate-700/50 flex flex-col max-h-[90vh] overflow-hidden text-[#e8eaed] font-sans">
+
+            <!-- Top Header -->
+            <div class="px-6 py-4 flex items-center justify-between border-b border-transparent">
+                <h2 class="text-xl font-medium tracking-wide">About CivicConnect</h2>
+                <button onclick="document.getElementById('aboutModal').classList.add('hidden')"
+                    class="text-[#9aa0a6] hover:text-white hover:bg-white/10 p-2 rounded-full transition-colors focus:outline-none">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-6 md:p-10 overflow-y-auto space-y-6 flex-1">
+
+                <!-- Main Header / Logo -->
+                <div class="flex items-center space-x-4 mb-2">
+                    <div class="bg-blue-600 p-2.5 rounded-full shrink-0 shadow-lg shadow-blue-500/20">
+                        <i data-lucide="map-pin" class="text-white w-8 h-8"></i>
+                    </div>
+                    <h1 class="text-3xl font-medium tracking-tight">CivicConnect Web</h1>
+                </div>
+
+                <!-- Section 1: Links & Updates -->
+                <div class="bg-[#292a2d] rounded-[16px] overflow-hidden">
+
+                    <!-- Update Status -->
+                    <div class="p-5 flex items-center space-x-4 border-b border-[#3c4043]">
+                        <i data-lucide="check-circle-2" class="w-5 h-5 text-[#8ab4f8] shrink-0"></i>
+                        <div>
+                            <p class="text-[15px] font-medium text-[#e8eaed]">CivicConnect is up to date</p>
+                            <p class="text-[13px] text-[#9aa0a6] mt-0.5">Version 1.0.4 (Official Build) (64-bit)</p>
+                        </div>
+                    </div>
+
+                    <!-- List Links -->
+                    <a href="#"
+                        class="px-5 py-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-[#3c4043] group min-h-[56px]"
+                        onclick="alert('Help center is currently under construction.')">
+                        <span class="text-[14px] text-[#e8eaed] font-medium">Get help with CivicConnect</span>
+                        <i data-lucide="external-link"
+                            class="w-4 h-4 text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors"></i>
+                    </a>
+
+                    <a href="report.html"
+                        class="px-5 py-4 flex items-center justify-between hover:bg-white/5 transition-colors border-b border-[#3c4043] group min-h-[56px]">
+                        <span class="text-[14px] text-[#e8eaed] font-medium">Report an issue</span>
+                        <i data-lucide="external-link"
+                            class="w-4 h-4 text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors"></i>
+                    </a>
+
+                    <a href="#"
+                        class="px-5 py-4 flex items-center justify-between hover:bg-white/5 transition-colors group min-h-[56px]">
+                        <span class="text-[14px] text-[#e8eaed] font-medium">Privacy policy</span>
+                        <i data-lucide="external-link"
+                            class="w-4 h-4 text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors"></i>
+                    </a>
+                </div>
+
+                <!-- Section 2: Legal -->
+                <div class="bg-[#292a2d] rounded-[16px] overflow-hidden p-6 mt-6 space-y-4">
+                    <div>
+                        <p class="text-[13px] text-[#e8eaed] font-medium">CivicConnect Web</p>
+                        <p class="text-[13px] text-[#9aa0a6] mt-1">Copyright 2026 OpenSource Project. All rights
+                            reserved.</p>
+                    </div>
+
+                    <p class="text-[13px] text-[#e8eaed] leading-relaxed">
+                        CivicConnect is made possible by the <a href="#" class="text-[#8ab4f8] hover:underline">Tailwind
+                            CSS</a> open source project and other <a href="#"
+                            class="text-[#8ab4f8] hover:underline">open source software</a>.
+                    </p>
+
+                    <div>
+                        <a href="#" class="text-[13px] text-[#8ab4f8] hover:underline font-medium">Terms of Service</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- Contact Us Modal -->
+    <div id="contactModal"
+        class="fixed inset-0 bg-slate-900/50 z-[100] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <!-- Modal Container -->
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative"
+            onclick="event.stopPropagation()">
+
+            <!-- Close Button -->
+            <button onclick="document.getElementById('contactModal').classList.add('hidden')"
+                class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 p-2 rounded-full transition-colors focus:outline-none z-50">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Left Side: Contact Information (Blue Gradient) -->
+            <div
+                class="bg-gradient-to-br from-blue-600 to-blue-800 p-8 md:p-10 text-white md:w-2/5 flex flex-col justify-between relative overflow-hidden">
+                <!-- Decorative Circles -->
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500 rounded-full opacity-20 blur-2xl"></div>
+                <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-400 rounded-full opacity-20 blur-2xl"></div>
+
+                <div class="relative z-10">
+                    <h2 class="text-3xl font-black mb-2 tracking-tight">Get in Touch</h2>
+                    <p class="text-blue-100 mb-8 font-medium">We're here to help and answer any question you might have.
+                    </p>
+
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4">
+                            <i data-lucide="map-pin" class="w-6 h-6 text-blue-300 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">CivicConnect HQ</h4>
+                                <p class="text-blue-100 text-sm mt-1">123 Civic Center Drive<br>Metro City, MT 12345</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-4">
+                            <i data-lucide="phone" class="w-6 h-6 text-blue-300 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">Phone</h4>
+                                <p class="text-blue-100 text-sm mt-1">1-800-CIVIC-GOV<br><span
+                                        class="opacity-75">Mon-Fri 8am - 6pm</span></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-4">
+                            <i data-lucide="mail" class="w-6 h-6 text-blue-300 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">Email Support</h4>
+                                <p class="text-blue-100 text-sm mt-1">support@civicconnect.org<br><span
+                                        class="opacity-75">24/7 Response Guaranteed</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Contact Form -->
+            <div class="p-8 md:p-10 md:w-3/5 bg-white relative z-10">
+                <h3 class="text-2xl font-bold text-slate-800 mb-6">Send us a Message</h3>
+
+                <form class="space-y-5"
+                    onsubmit="event.preventDefault(); alert('Message Sent! A representative will contact you shortly.'); document.getElementById('contactModal').classList.add('hidden');">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-bold text-slate-700">First Name</label>
+                            <input type="text" required placeholder="Jane"
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-bold text-slate-700">Last Name</label>
+                            <input type="text" required placeholder="Doe"
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-bold text-slate-700">Email Address</label>
+                        <input type="email" required placeholder="jane.doe@example.com"
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-bold text-slate-700">Subject / Category</label>
+                        <select
+                            class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow appearance-none cursor-pointer">
+                            <option>General Inquiry</option>
+                            <option>Technical Support</option>
+                            <option>Report an Urgent Issue</option>
+                            <option>Feedback & Suggestions</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-bold text-slate-700">Your Message</label>
+                        <textarea rows="4" required placeholder="How can we help you today?"
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow resize-none"></textarea>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                        <span>Send Message</span>
+                        <i data-lucide="send" class="w-4 h-4 ml-1"></i>
+                    </button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        // Initialize Supabase Client
+        const _supabaseUrl = 'https://lospwkmfoutyhfjlxqll.supabase.co';
+        const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvc3B3a21mb3V0eWhmamx4cWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MzgzMDAsImV4cCI6MjA4NzAxNDMwMH0.cdmBXofteICV2dRD2W-p06t6PPxbZebecipQyf7qyF8';
+        const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+
+        lucide.createIcons();
+
+        // Get URL ID Parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('id');
+
+        async function fetchReportDetails() {
+            if (!reportId) {
+                showError("No report ID provided in the URL.");
+                return;
+            }
+
+            try {
+                const { data: report, error } = await supabaseClient
+                    .from('reports')
+                    .select('*')
+                    .eq('id', reportId)
+                    .single();
+
+                if (error) throw error;
+                if (!report) throw new Error("Report not found.");
+
+                renderReportDetails(report);
+
+            } catch (err) {
+                console.error("Error fetching report:", err);
+                showError(err.message || "Failed to load report details.");
+            }
+        }
+
+        function renderReportDetails(report) {
+            // Hide loading, show content
+            document.getElementById('loadingIndicator').classList.add('hidden');
+            document.getElementById('reportContent').classList.remove('hidden');
+
+            // Header Info
+            document.getElementById('headerReportId').innerText = report.report_id || report.id.substring(0, 8);
+            document.getElementById('headerReportTitle').innerText = report.category + " Issue";
+
+            // Description
+            document.getElementById('reportDescription').innerText = report.description;
+
+            // Date
+            const dt = new Date(report.created_at);
+            document.getElementById('reportDate').innerText = dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            // Category Badge
+            const catBadge = document.getElementById('reportCategoryBadge');
+            const catText = document.getElementById('reportCategoryText');
+            catText.innerText = report.category;
+
+            if (report.category === "Pothole") catBadge.className += " text-red-700 bg-red-50 border-red-200";
+            else if (report.category === "Streetlight") catBadge.className += " text-blue-700 bg-blue-50 border-blue-200";
+            else if (report.category === "Garbage") catBadge.className += " text-amber-700 bg-amber-50 border-amber-200";
+            else if (report.category === "Water") catBadge.className += " text-cyan-700 bg-cyan-50 border-cyan-200";
+
+            // Status Styling
+            const statusContainer = document.getElementById('reportStatusContainer');
+            const statusText = document.getElementById('reportStatusText');
+            const statusIcon = document.getElementById('reportStatusIcon');
+            const status = (report.status || "Pending").toLowerCase();
+
+            statusText.innerText = report.status || "PENDING";
+
+            if (status.includes('resolved') || status.includes('completed')) {
+                statusContainer.className = "w-full py-4 rounded-xl border-2 flex flex-col items-center justify-center bg-green-50 border-green-200 text-green-700";
+                statusIcon.setAttribute('data-lucide', 'check-circle');
+            } else if (status.includes('progress')) {
+                statusContainer.className = "w-full py-4 rounded-xl border-2 flex flex-col items-center justify-center bg-blue-50 border-blue-200 text-blue-700";
+                statusIcon.setAttribute('data-lucide', 'settings');
+            } else {
+                statusContainer.className = "w-full py-4 rounded-xl border-2 flex flex-col items-center justify-center bg-yellow-50 border-yellow-200 text-yellow-700";
+                statusIcon.setAttribute('data-lucide', 'clock');
+            }
+
+            // Address & Map
+            document.getElementById('reportAddress').innerText = report.full_address || "No precise address provided.";
+
+            if (report.latitude && report.longitude) {
+                // We need Leaflet script loaded here! (Wait, I should inject leaflet script tags too)
+                // Let's create an iframe with Google maps or inject Leaflet dynamically if missing
+                const mapHtml = `<iframe width="100%" height="100%" frameborder="0" style="border:0" 
+                    src="https://maps.google.com/maps?q=${report.latitude},${report.longitude}&hl=es;z=14&amp;output=embed"></iframe>`;
+                document.getElementById('detailMap').innerHTML = mapHtml;
+            } else {
+                document.getElementById('detailMap').innerHTML = `<div class="w-full h-full flex flex-col items-center justify-center text-slate-400 bg-slate-100"><i data-lucide="map-pin-off" class="w-8 h-8 mb-2"></i><span class="text-sm font-medium">No Coordinates Available</span></div>`;
+            }
+
+            // Image
+            if (report.image_url) {
+                const imgEl = document.getElementById('reportImage');
+                imgEl.src = report.image_url;
+                imgEl.classList.remove('hidden');
+                document.getElementById('reportImagePlaceholder').classList.add('hidden');
+            }
+
+            // Re-bind icons
+            lucide.createIcons();
+        }
+
+        function showError(msg) {
+            document.getElementById('loadingIndicator').classList.add('hidden');
+            document.getElementById('errorContainer').classList.remove('hidden');
+            document.getElementById('errorMessage').innerText = msg;
+        }
+
+        // Bind LocalStorage Email to the Nav Display
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedEmail = localStorage.getItem('civic_email');
+            if (savedEmail) {
+                document.getElementById('userEmailDisplay').innerText = savedEmail;
+            }
+            fetchReportDetails();
+        });
+
+        // Mobile Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+
+</html>

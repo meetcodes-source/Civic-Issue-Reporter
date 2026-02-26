@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Register</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-100 flex items-center justify-center p-4 transition-colors duration-200">
+    <script>
+        // Apply theme immediately on load to prevent flash
+        if (localStorage.getItem('civic_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+
+    <!-- Signup Container -->
+    <div id="signupContainer" class="bg-white w-full max-w-md rounded-2xl shadow-xl p-8 relative">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-blue-600">Register</h1>
+            <a href="index.html" class="text-slate-400 hover:text-slate-600">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </a>
+        </div>
+
+        <!-- Registration Form -->
+        <form class="space-y-6 text-left">
+            <div>
+                <label class="block text-slate-700 font-semibold mb-2">Full Name</label>
+                <div class="relative w-full">
+                    <i data-lucide="user"
+                        class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
+                    <input type="text" id="signupName" placeholder="John Doe"
+                        class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                        required />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-slate-700 font-semibold mb-2">Email Address</label>
+                    <div class="relative w-full">
+                        <i data-lucide="mail"
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
+                        <input type="email" id="signupEmail" placeholder="john@example.com"
+                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            required />
+                    </div>
+                </div>
+
+                <div class="col-span-1 md:col-span-2">
+                    <label class="block text-slate-700 font-semibold mb-2">Phone Number</label>
+                    <div class="relative w-full">
+                        <i data-lucide="phone"
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
+                        <input type="tel" id="signupPhone" placeholder="(555) 123-4567"
+                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            required />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-2">City</label>
+                    <div class="relative w-full">
+                        <i data-lucide="map-pin"
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
+                        <input type="text" id="signupCity" placeholder="Metro City"
+                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            required />
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-700 font-semibold mb-2">State</label>
+                    <div class="relative w-full">
+                        <i data-lucide="map"
+                            class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
+                        <input type="text" id="signupState" placeholder="MT"
+                            class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                            required />
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-slate-700 font-semibold mb-2">Password</label>
+                <div class="relative w-full">
+                    <i data-lucide="lock"
+                        class="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5 pointer-events-none z-10"></i>
+                    <input type="password" id="signupPassword" placeholder="Create a strong password"
+                        class="w-full pl-12 pr-4 py-4 border rounded-2xl bg-slate-50 outline-none focus:ring-2 focus:ring-blue-400 text-slate-900"
+                        required />
+                </div>
+            </div>
+
+            <!-- Error Message Container (Hidden by default) -->
+            <div id="signupErrorContainer"
+                class="hidden bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500 p-4 mb-4 rounded-r-lg">
+                <div class="flex items-center">
+                    <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 mr-2"></i>
+                    <p id="signupErrorMessage" class="text-sm font-medium text-red-700 dark:text-red-400"></p>
+                </div>
+            </div>
+
+            <button type="button"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl text-lg shadow-lg transition-all hover:-translate-y-0.5 mt-4"
+                onclick="handleCreateAccount()">
+                Create Account
+            </button>
+        </form>
+
+        <p class="mt-6 text-center text-sm text-slate-600">
+            Already have an account?
+            <a href="login.html" class="text-blue-600 font-bold hover:underline">Sign in</a>
+        </p>
+    </div>
+
+    <!-- OTP Verification Container (Mock) -->
+    <div id="otpContainer" class="hidden bg-white w-full max-w-md rounded-2xl shadow-xl p-8 relative text-center">
+        <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i data-lucide="mail" class="text-blue-600 w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-900 mb-2">Check your email</h2>
+        <p class="text-slate-500 mb-8">We've sent a 6-digit verification code to your email.</p>
+
+        <div class="flex justify-center gap-3 mb-8">
+            <input type="text" maxLength="1"
+                class="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-blue-500 focus:ring-0 outline-none transition-all placeholder-slate-300"
+                placeholder="-" />
+            <input type="text" maxLength="1"
+                class="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-blue-500 focus:ring-0 outline-none transition-all placeholder-slate-300"
+                placeholder="-" />
+            <input type="text" maxLength="1"
+                class="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-blue-500 focus:ring-0 outline-none transition-all placeholder-slate-300"
+                placeholder="-" />
+            <input type="text" maxLength="1"
+                class="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-blue-500 focus:ring-0 outline-none transition-all placeholder-slate-300"
+                placeholder="-" />
+            <input type="text" maxLength="1"
+                class="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-blue-500 focus:ring-0 outline-none transition-all placeholder-slate-300"
+                placeholder="-" />
+            <input type="text" maxLength="1"
+                class="w-12 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:border-blue-500 focus:ring-0 outline-none transition-all placeholder-slate-300"
+                placeholder="-" />
+        </div>
+
+        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl text-lg shadow-lg"
+            onclick="setTimeout(() => { window.location.href = 'dashboard.html' }, 1000); this.innerHTML = 'Verifying...'">Verify
+            & Continue</button>
+    </div>
+
+    <!-- Supabase SDK & Config -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        lucide.createIcons();
+
+        // Initialize Supabase Client
+        const _supabaseUrl = 'https://lospwkmfoutyhfjlxqll.supabase.co';
+        const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvc3B3a21mb3V0eWhmamx4cWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MzgzMDAsImV4cCI6MjA4NzAxNDMwMH0.cdmBXofteICV2dRD2W-p06t6PPxbZebecipQyf7qyF8';
+        const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+
+        async function handleCreateAccount() {
+            // Get values
+            const name = document.getElementById('signupName').value;
+            const email = document.getElementById('signupEmail').value;
+            const phone = document.getElementById('signupPhone').value;
+            const city = document.getElementById('signupCity').value;
+            const state = document.getElementById('signupState').value;
+            const password = document.getElementById('signupPassword').value;
+
+            const currErrorEl = document.getElementById('signupErrorContainer');
+            const currErrorMsgEl = document.getElementById('signupErrorMessage');
+            currErrorEl.classList.add('hidden');
+
+            if (!name || !email || !phone || !city || !state || !password) {
+                currErrorMsgEl.innerText = "Please fill in all fields to create an account.";
+                currErrorEl.classList.remove('hidden');
+                // Reinitialize lucide to catch any new icons if needed
+                lucide.createIcons();
+                return;
+            }
+
+            const btn = document.querySelector('button[onclick="handleCreateAccount()"]');
+            btn.innerHTML = 'Creating Account... <i class="lucide lucide-loader animate-spin ml-2"></i>';
+            btn.disabled = true;
+
+            try {
+                // Insert directly into public.users
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .insert([
+                        {
+                            email: email,
+                            password: password, // Note: In production, passwords should never be stored in plain text.
+                            full_name: name,
+                            phone_number: phone,
+                            city: city,
+                            state: state,
+                            role: 'Citizen' // Explicitly cast new signups as Citizen
+                        }
+                    ]);
+
+                if (error) throw error;
+
+                // Save to browser memory for current session
+                localStorage.setItem('civic_email', email);
+                localStorage.setItem('civic_password', password);
+
+                // Show OTP Mock
+                document.getElementById('signupContainer').classList.add('hidden');
+                document.getElementById('otpContainer').classList.remove('hidden');
+
+            } catch (err) {
+                console.error("Signup error:", err);
+
+                let friendlyMessage = "An error occurred during signup: " + err.message;
+
+                // Catch Supabase unique constraint violation for duplicate emails
+                if (err.message && (err.message.includes('users_email_key') || err.message.includes('duplicate key'))) {
+                    friendlyMessage = "An account with this email address already exists. Please log in instead.";
+                }
+
+                document.getElementById('signupErrorMessage').innerText = friendlyMessage;
+                document.getElementById('signupErrorContainer').classList.remove('hidden');
+                lucide.createIcons();
+
+                btn.innerHTML = 'Create Account';
+                btn.disabled = false;
+            }
+        }
+
+        function handleVerifyOTP(btn) {
+            btn.innerHTML = 'Verifying...';
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1000);
+        }
+    </script
+</body>
+
+</html>

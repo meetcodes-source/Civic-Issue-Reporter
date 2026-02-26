@@ -1,0 +1,2875 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Admin Panel</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            safelist: [
+                // Department card dynamic color classes
+                'bg-blue-100', 'dark:bg-blue-900/30', 'text-blue-600', 'dark:text-blue-400', 'hover:border-blue-400', 'dark:hover:border-blue-500', 'from-blue-100/50', 'dark:from-blue-900/20', 'group-hover:text-blue-500', 'dark:group-hover:text-blue-400',
+                'bg-emerald-100', 'dark:bg-emerald-900/30', 'text-emerald-600', 'dark:text-emerald-400', 'hover:border-emerald-400', 'dark:hover:border-emerald-500', 'from-emerald-100/50', 'dark:from-emerald-900/20', 'group-hover:text-emerald-500', 'dark:group-hover:text-emerald-400',
+                'bg-sky-100', 'dark:bg-sky-900/30', 'text-sky-600', 'dark:text-sky-400', 'hover:border-sky-400', 'dark:hover:border-sky-500', 'from-sky-100/50', 'dark:from-sky-900/20', 'group-hover:text-sky-500', 'dark:group-hover:text-sky-400',
+                'bg-amber-100', 'dark:bg-amber-900/30', 'text-amber-600', 'dark:text-amber-400', 'hover:border-amber-400', 'dark:hover:border-amber-500', 'from-amber-100/50', 'dark:from-amber-900/20', 'group-hover:text-amber-500', 'dark:group-hover:text-amber-400',
+                'bg-violet-100', 'dark:bg-violet-900/30', 'text-violet-600', 'dark:text-violet-400', 'hover:border-violet-400', 'dark:hover:border-violet-500', 'from-violet-100/50', 'dark:from-violet-900/20', 'group-hover:text-violet-500', 'dark:group-hover:text-violet-400',
+            ]
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Heatmap Plugin -->
+    <script src="https://unpkg.com/leaflet-heat@0.2.0/dist/leaflet-heat.js"></script>
+    <!-- Leaflet MarkerCluster Plugin -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Scrollbar for inner components */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 dark:bg-slate-900 min-h-screen flex flex-col font-sans transition-colors duration-200">
+    <script>
+        if (localStorage.getItem('civic_theme') === 'dark') document.documentElement.classList.add('dark');
+    </script>
+
+    <!-- Sidebar -->
+    <aside id="adminSidebar"
+        class="bg-blue-600 dark:bg-slate-900 w-64 h-full border-r border-blue-500 dark:border-slate-800 flex flex-col fixed z-50 transition-transform duration-300 transform -translate-x-full lg:translate-x-0 overflow-y-auto shadow-2xl lg:shadow-none">
+
+        <!-- Brand -->
+        <div
+            class="h-16 flex items-center px-6 border-b border-blue-500 dark:border-slate-800 sticky top-0 bg-blue-600 dark:bg-slate-900 z-10">
+            <div class="flex items-center space-x-3 gap-2">
+                <div class="bg-blue-700 p-1.5 rounded-lg border border-blue-500">
+                    <i data-lucide="shield" class="text-white w-5 h-5"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-black tracking-tight leading-none block text-white">CivicConnect</span>
+                    <span
+                        class="text-[10px] text-blue-100 dark:text-blue-400 font-bold tracking-widest uppercase">Admin</span>
+                </div>
+            </div>
+            <button class="lg:hidden ml-auto text-blue-100 dark:text-slate-400" onclick="toggleAdminSidebar()">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex-1 py-4 px-3 space-y-1">
+            <p class="px-3 text-xs font-bold text-blue-200 dark:text-slate-500 uppercase tracking-wider mb-2">Overview
+            </p>
+            <a href="#" id="navDashboard"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg bg-blue-700 dark:bg-blue-900/30 text-white dark:text-blue-400 font-semibold group transition-all">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" id="navLiveMap"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 dark:text-slate-400 font-medium hover:bg-blue-700 dark:hover:bg-slate-800 hover:text-white dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="map"
+                    class="w-5 h-5 text-blue-100 dark:text-slate-500 group-hover:text-white dark:group-hover:text-blue-400"></i>
+                <span>Live Map</span>
+            </a>
+
+            <p class="px-3 text-xs font-bold text-blue-200 dark:text-slate-500 uppercase tracking-wider mb-2 mt-6">
+                Triage & Routing</p>
+            <a href="#" id="navRecentReports"
+                class="flex items-center justify-between px-3 py-2.5 rounded-lg text-blue-100 dark:text-slate-400 font-medium hover:bg-blue-700 dark:hover:bg-slate-800 hover:text-white dark:hover:text-slate-100 group transition-all">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="inbox"
+                        class="w-5 h-5 text-blue-100 dark:text-slate-500 group-hover:text-white dark:group-hover:text-blue-400"></i>
+                    <span>Recent Reports</span>
+                </div>
+                <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">12</span>
+            </a>
+            <a href="#" id="navDepartments"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 dark:text-slate-400 font-medium hover:bg-blue-700 dark:hover:bg-slate-800 hover:text-white dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="users"
+                    class="w-5 h-5 text-blue-100 dark:text-slate-500 group-hover:text-white dark:group-hover:text-blue-400"></i>
+                <span>Departments</span>
+            </a>
+
+            <p class="px-3 text-xs font-bold text-blue-200 dark:text-slate-500 uppercase tracking-wider mb-2 mt-6">
+                Performance</p>
+            <a href="#" id="navAnalytics"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 dark:text-slate-400 font-medium hover:bg-blue-700 dark:hover:bg-slate-800 hover:text-white dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="bar-chart-2"
+                    class="w-5 h-5 text-blue-100 dark:text-slate-500 group-hover:text-white dark:group-hover:text-blue-400"></i>
+                <span>Analytics</span>
+            </a>
+            <a href="#" id="navFeedback"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 dark:text-slate-400 font-medium hover:bg-blue-700 dark:hover:bg-slate-800 hover:text-white dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="message-square"
+                    class="w-5 h-5 text-blue-100 dark:text-slate-500 group-hover:text-white dark:group-hover:text-blue-400"></i>
+                <span>Feedback</span>
+            </a>
+
+
+        </div>
+
+        <!-- Bottom Settings -->
+        <div class="p-4 border-t border-blue-500 dark:border-slate-800 mt-auto space-y-1">
+            <a href="#" id="navSettings"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-blue-100 dark:text-slate-400 font-medium hover:bg-blue-700 dark:hover:bg-slate-800 hover:text-white dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="settings"
+                    class="w-5 h-5 text-blue-100 dark:text-slate-500 group-hover:text-white dark:group-hover:text-blue-400"></i>
+                <span>Settings</span>
+            </a>
+            <a href="#" id="adminLogoutBtn"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-200 dark:text-red-400 hover:bg-red-900/40 dark:hover:bg-red-900/30 hover:text-white transition-all group">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="flex-1 lg:ml-64 flex flex-col h-screen overflow-hidden bg-slate-50 dark:bg-slate-900 transition-colors">
+
+        <!-- Top Header -->
+        <header
+            class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 h-16 flex items-center justify-between px-4 sm:px-6 z-40 sticky top-0 shrink-0">
+            <div class="flex items-center flex-1">
+                <button class="lg:hidden mr-4 text-slate-500 hover:text-blue-600 dark:text-slate-400"
+                    onclick="toggleAdminSidebar()">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+
+                <!-- Global Search Removed from Header -->
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-4">
+                <button
+                    class="relative p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span
+                        class="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900"></span>
+                </button>
+                <div class="h-8 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
+                <div class="flex items-center gap-3 cursor-pointer">
+                    <div id="adminProfileInitials"
+                        class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                        AD
+                    </div>
+                    <div class="hidden md:block text-sm">
+                        <p id="adminProfileName" class="font-bold text-slate-700 dark:text-slate-200 leading-none">Admin
+                            User</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Chief Dispatcher</p>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 hidden sm:block"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Scrollable Main Canvas -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <div class="max-w-7xl mx-auto space-y-6">
+
+                <!-- Views Container -->
+                <div id="viewsContainer" class="w-full relative">
+
+                    <!-- Dashboard View -->
+                    <div id="dashboardView" class="space-y-6 block">
+
+                        <!-- 1. High-Level "Snapshot" View -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
+                            <div>
+                                <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Command
+                                    Center
+                                </h1>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Citywide infrastructure overview
+                                </p>
+                            </div>
+                            <div
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm inline-flex items-center">
+                                <i data-lucide="calendar" class="w-4 h-4 mr-2 text-blue-500"></i>
+                                Data synced: Just now
+                            </div>
+                        </div>
+
+                        <!-- Metric Tiles -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <!-- Tile 1 -->
+                            <div
+                                class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 group cursor-pointer hover:border-blue-300 transition-colors">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Total
+                                            Active Issues
+                                        </p>
+                                        <h3 id="total-active-count"
+                                            class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">0
+                                        </h3>
+                                    </div>
+                                    <div
+                                        class="bg-blue-50 dark:bg-blue-900/30 p-2.5 rounded-xl text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                                        <i data-lucide="activity" class="w-5 h-5"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center text-sm">
+                                    <span
+                                        class="text-green-600 dark:text-green-400 font-bold flex items-center bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">
+                                        <i data-lucide="trending-down" class="w-3.5 h-3.5 mr-1"></i> 12%
+                                    </span>
+                                    <span class="text-slate-500 dark:text-slate-400 ml-2 text-xs">vs last week</span>
+                                </div>
+                            </div>
+
+                            <!-- Tile 2 -->
+                            <div
+                                class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 group cursor-pointer hover:border-red-300 transition-colors">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Urgent
+                                            Alerts</p>
+                                        <h3 id="urgent-alerts-count"
+                                            class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">0
+                                        </h3>
+                                    </div>
+                                    <div
+                                        class="bg-red-50 dark:bg-red-900/30 p-2.5 rounded-xl text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform">
+                                        <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center text-sm">
+                                    <span
+                                        class="text-red-600 dark:text-red-400 font-bold flex items-center bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">
+                                        <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-1"></i> 5%
+                                    </span>
+                                    <span class="text-slate-500 dark:text-slate-400 ml-2 text-xs">vs last week</span>
+                                </div>
+                            </div>
+
+                            <!-- Tile 3 -->
+                            <div
+                                class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 group cursor-pointer hover:border-orange-300 transition-colors">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Avg
+                                            Resolution Time
+                                        </p>
+                                        <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                            4.2d</h3>
+                                    </div>
+                                    <div
+                                        class="bg-orange-50 dark:bg-orange-900/30 p-2.5 rounded-xl text-orange-600 dark:text-orange-400 group-hover:scale-110 transition-transform">
+                                        <i data-lucide="clock" class="w-5 h-5"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center text-sm">
+                                    <span
+                                        class="text-green-600 dark:text-green-400 font-bold flex items-center bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded">
+                                        <i data-lucide="trending-down" class="w-3.5 h-3.5 mr-1"></i> 0.8d
+                                    </span>
+                                    <span class="text-slate-500 dark:text-slate-400 ml-2 text-xs">vs last week</span>
+                                </div>
+                            </div>
+
+                            <!-- Tile 4 -->
+                            <div
+                                class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 group cursor-pointer hover:border-blue-300 transition-colors">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mb-1">Dept
+                                            Backlog (PW)
+                                        </p>
+                                        <h3 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                                            156</h3>
+                                    </div>
+                                    <div
+                                        class="bg-blue-50 dark:bg-blue-900/30 p-2.5 rounded-xl text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                                        <i data-lucide="briefcase" class="w-5 h-5"></i>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center text-sm">
+                                    <span
+                                        class="text-red-600 dark:text-red-400 font-bold flex items-center bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">
+                                        <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-1"></i> 24
+                                    </span>
+                                    <span class="text-slate-500 dark:text-slate-400 ml-2 text-xs">Public Works</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Search & State Filter Container -->
+                        <div class="flex flex-col sm:flex-row gap-4 w-full">
+                            <!-- Search Bar -->
+                            <div class="relative w-full flex-1">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                                </div>
+                                <input id="searchInput" type="text"
+                                    placeholder="Search by Tracking ID, Description, or Category..."
+                                    class="block w-full pl-10 pr-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all shadow-sm">
+                            </div>
+                            <!-- State Filter -->
+                            <div class="w-full sm:w-64">
+                                <select id="stateFilter"
+                                    class="block w-full px-3 py-2.5 border border-slate-200 dark:border-slate-700 rounded-xl leading-5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-all shadow-sm cursor-pointer">
+                                    <option value="all">All States</option>
+                                    <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                                    <option value="Assam">Assam</option>
+                                    <option value="Bihar">Bihar</option>
+                                    <option value="Chandigarh">Chandigarh</option>
+                                    <option value="Chhattisgarh">Chhattisgarh</option>
+                                    <option value="Dadra and Nagar Haveli and Daman and Diu">Dadra and Nagar Haveli
+                                    </option>
+                                    <option value="Delhi">Delhi</option>
+                                    <option value="Goa">Goa</option>
+                                    <option value="Gujarat">Gujarat</option>
+                                    <option value="Haryana">Haryana</option>
+                                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                                    <option value="Jharkhand">Jharkhand</option>
+                                    <option value="Karnataka">Karnataka</option>
+                                    <option value="Kerala">Kerala</option>
+                                    <option value="Ladakh">Ladakh</option>
+                                    <option value="Lakshadweep">Lakshadweep</option>
+                                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                                    <option value="Maharashtra">Maharashtra</option>
+                                    <option value="Manipur">Manipur</option>
+                                    <option value="Meghalaya">Meghalaya</option>
+                                    <option value="Mizoram">Mizoram</option>
+                                    <option value="Nagaland">Nagaland</option>
+                                    <option value="Odisha">Odisha</option>
+                                    <option value="Puducherry">Puducherry</option>
+                                    <option value="Punjab">Punjab</option>
+                                    <option value="Rajasthan">Rajasthan</option>
+                                    <option value="Sikkim">Sikkim</option>
+                                    <option value="Tamil Nadu">Tamil Nadu</option>
+                                    <option value="Telangana">Telangana</option>
+                                    <option value="Tripura">Tripura</option>
+                                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                                    <option value="Uttarakhand">Uttarakhand</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 3. Smart Routing & Triage (Queue) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-[600px] overflow-hidden">
+
+                            <div
+                                class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                                <div>
+                                    <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center">
+                                        <i data-lucide="inbox" class="w-5 h-5 mr-2 text-blue-500"></i> All Reports
+                                    </h2>
+                                </div>
+                                <!-- Batch Actions Toggle -->
+                                <button class="text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 p-1"
+                                    title="Batch Actions">
+                                    <i data-lucide="check-square" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+
+                            <!-- Filter Tabs -->
+                            <div
+                                class="flex w-full border-b border-slate-200 dark:border-slate-700 text-sm overflow-x-auto hide-scrollbar">
+                                <button id="filterAll"
+                                    class="flex-1 px-4 py-3 font-bold text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 whitespace-nowrap flex justify-center items-center">All
+                                    New</button>
+                                <button id="filterCritical"
+                                    class="flex-1 px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent whitespace-nowrap flex justify-center items-center"><span
+                                        class="flex items-center"><i data-lucide="alert-triangle"
+                                            class="w-3.5 h-3.5 mr-1 text-red-500"></i> Critical</span></button>
+                                <button id="filterDept"
+                                    class="flex-1 px-4 py-3 font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 border-b-2 border-transparent whitespace-nowrap flex justify-center items-center">My
+                                    Dept</button>
+                            </div>
+
+                            <!-- Queue List -->
+                            <div id="triageQueue"
+                                class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50 p-0">
+                            </div>
+
+                            <!-- Queue Footer -->
+                            <div
+                                class="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-center">
+                                <button
+                                    class="text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">View
+                                    Full Queue →</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Reports View -->
+                    <div id="recentReportsView" class="hidden h-[calc(100vh-160px)] w-full space-y-6">
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-full overflow-hidden">
+                            <div
+                                class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                                <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center">
+                                    <i data-lucide="clock" class="w-5 h-5 mr-2 text-blue-500"></i> Recent Reports (All
+                                    India)
+                                </h2>
+                            </div>
+                            <div id="recentQueue"
+                                class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50 p-0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Map View -->
+                    <div id="mapView" class="hidden h-[calc(100vh-160px)] w-full">
+                        <!-- 2. Geographic Command & Control (Map) -->
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-full">
+
+                            <!-- Map Controls Header -->
+                            <div
+                                class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-wrap justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-800/50 z-10 relative shrink-0">
+                                <h2 class="font-bold text-slate-800 dark:text-slate-100 flex items-center">
+                                    <i data-lucide="map" class="w-5 h-5 mr-2 text-blue-500"></i> Live Infrastructure
+                                    Map
+                                </h2>
+
+                                <div class="flex items-center gap-3">
+                                    <!-- Geographic Fencing Toggle -->
+                                    <select
+                                        class="text-sm border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none py-1.5 pl-3 pr-8 shadow-sm cursor-pointer">
+                                        <option>All Wards</option>
+                                        <option>North Ward</option>
+                                        <option>South Ward</option>
+                                        <option>Downtown District</option>
+                                    </select>
+
+                                    <!-- Heatmap Toggle -->
+                                    <button id="heatmapToggleBtn"
+                                        class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 px-3 py-1.5 rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center cursor-pointer">
+                                        <i id="heatmapToggleIcon" data-lucide="flame"
+                                            class="w-4 h-4 mr-1.5 text-orange-500"></i> Heatmap
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Map Container Placeholder -->
+                            <div id="adminMap"
+                                class="flex-1 bg-slate-100 dark:bg-slate-900 relative z-0 border-t border-transparent dark:border-slate-800 isolate min-h-0">
+                                <!-- Will be replaced by Leaflet Map -->
+                            </div>
+
+                            <!-- Map Legend -->
+                            <div
+                                class="bg-white dark:bg-slate-800 p-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400 justify-center z-10 relative shrink-0">
+                                <div class="flex items-center"><span
+                                        class="w-3 h-3 rounded-full bg-red-500 mr-1.5 shadow-[0_0_8px_rgba(239,68,68,0.5)]"></span>
+                                    New / Pending</div>
+                                <div class="flex items-center"><span
+                                        class="w-3 h-3 rounded-full bg-yellow-500 mr-1.5 shadow-[0_0_8px_rgba(234,179,8,0.5)]"></span>
+                                    In Progress</div>
+                                <div class="flex items-center"><span
+                                        class="w-3 h-3 rounded-full bg-green-500 mr-1.5 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></span>
+                                    Resolved</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Departments View -->
+                    <div id="departmentsView" class="hidden w-full space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2
+                                    class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                    <i data-lucide="building-2" class="w-6 h-6 text-blue-500"></i>
+                                    Municipal Departments
+                                </h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Live operational metrics per
+                                    department. Click a card to filter reports.</p>
+                            </div>
+                            <div
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm inline-flex items-center">
+                                <i data-lucide="refresh-cw" class="w-4 h-4 mr-2 text-blue-500"></i>
+                                <span id="deptSyncStatus">Syncing...</span>
+                            </div>
+                        </div>
+
+                        <!-- Skeleton Loader -->
+                        <div id="deptSkeletonLoader" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 animate-pulse">
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex-1">
+                                        <div class="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                                        <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+                                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                                    <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-full"></div>
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 animate-pulse">
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex-1">
+                                        <div class="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                                        <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+                                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                                    <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-full"></div>
+                                </div>
+                            </div>
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 animate-pulse">
+                                <div class="flex items-center gap-4 mb-6">
+                                    <div class="w-14 h-14 rounded-2xl bg-slate-200 dark:bg-slate-700"></div>
+                                    <div class="flex-1">
+                                        <div class="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4 mb-2"></div>
+                                        <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                                    </div>
+                                </div>
+                                <div class="space-y-4">
+                                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full"></div>
+                                    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                                    <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded-full w-full"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actual Department Cards Grid -->
+                        <div id="deptCardsGrid" class="hidden grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+                        </div>
+
+                        <!-- Inline Filtered Reports (shows when a card is clicked) -->
+                        <div id="deptFilteredReports" class="hidden">
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col max-h-[500px] overflow-hidden">
+                                <div
+                                    class="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h2 id="deptFilterTitle"
+                                        class="font-bold text-slate-800 dark:text-slate-100 flex items-center">
+                                        <i data-lucide="filter" class="w-5 h-5 mr-2 text-blue-500"></i> Filtered
+                                        Reports
+                                    </h2>
+                                    <button onclick="closeDeptFilter()"
+                                        class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors"
+                                        title="Close">
+                                        <i data-lucide="x" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+                                <div id="deptFilteredQueue"
+                                    class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/50 p-0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Broadcast Modal -->
+                    <div id="broadcastModal"
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md">
+                            <div
+                                class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i data-lucide="radio" class="w-5 h-5 text-blue-500"></i>
+                                    <span id="broadcastDeptName">Broadcast</span>
+                                </h3>
+                                <button onclick="document.getElementById('broadcastModal').classList.add('hidden')"
+                                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Message to
+                                    Field Officers</label>
+                                <textarea id="broadcastMessage" rows="4"
+                                    placeholder="Type your broadcast message here..."
+                                    class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"></textarea>
+                                <button onclick="sendBroadcast()"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm">
+                                    <i data-lucide="send" class="w-4 h-4"></i> Send Broadcast
+                                </button>
+                                <div id="broadcastSuccess"
+                                    class="hidden bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium p-3 rounded-xl flex items-center gap-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i> Broadcast sent successfully!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transfer Modal -->
+                    <div id="transferModal"
+                        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] hidden flex items-center justify-center p-4">
+                        <div
+                            class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md">
+                            <div
+                                class="p-5 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i data-lucide="arrow-right-left" class="w-5 h-5 text-amber-500"></i>
+                                    <span>Transfer Pending Tasks</span>
+                                </h3>
+                                <button onclick="document.getElementById('transferModal').classList.add('hidden')"
+                                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">
+                                    <i data-lucide="x" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div class="p-5 space-y-4">
+                                <p class="text-sm text-slate-500 dark:text-slate-400">Transfer all pending tasks from
+                                    <strong id="transferFromDept" class="text-slate-900 dark:text-white"></strong> to:
+                                </p>
+                                <select id="transferTargetDept"
+                                    class="w-full px-4 py-3 border border-slate-200 dark:border-slate-600 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:ring-2 focus:ring-blue-500 cursor-pointer">
+                                </select>
+                                <p id="transferPendingCount"
+                                    class="text-xs text-slate-400 dark:text-slate-500 font-medium"></p>
+                                <button onclick="executeTransfer()"
+                                    class="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-2 text-sm">
+                                    <i data-lucide="arrow-right-left" class="w-4 h-4"></i> Transfer Tasks
+                                </button>
+                                <div id="transferSuccess"
+                                    class="hidden bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm font-medium p-3 rounded-xl flex items-center gap-2">
+                                    <i data-lucide="check-circle" class="w-4 h-4"></i> Tasks transferred successfully!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analytics View -->
+                    <div id="analyticsView" class="hidden w-full space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2
+                                    class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                    <i data-lucide="bar-chart-2" class="w-6 h-6 text-blue-500"></i>
+                                    Analytics Dashboard
+                                </h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">30-day performance trends and
+                                    category insights</p>
+                            </div>
+                            <div
+                                class="text-sm font-medium text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm inline-flex items-center">
+                                <i data-lucide="calendar" class="w-4 h-4 mr-2 text-blue-500"></i>
+                                <span id="analyticsPeriod">Last 30 Days</span>
+                            </div>
+                        </div>
+
+                        <!-- Summary Stat Cards -->
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-center">
+                                <p id="statTotalReported" class="text-3xl font-black text-blue-600 dark:text-blue-400">0
+                                </p>
+                                <p
+                                    class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
+                                    Total Reported</p>
+                            </div>
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-center">
+                                <p id="statTotalResolved"
+                                    class="text-3xl font-black text-emerald-600 dark:text-emerald-400">0</p>
+                                <p
+                                    class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
+                                    Total Resolved</p>
+                            </div>
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-center">
+                                <p id="statResolutionRate"
+                                    class="text-3xl font-black text-amber-600 dark:text-amber-400">0%</p>
+                                <p
+                                    class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
+                                    Resolution Rate</p>
+                            </div>
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 text-center">
+                                <p id="statTopCategory"
+                                    class="text-lg font-black text-violet-600 dark:text-violet-400 truncate">—</p>
+                                <p
+                                    class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">
+                                    Top Category</p>
+                            </div>
+                        </div>
+
+                        <!-- Charts Grid -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Line Chart: 30-Day Trend -->
+                            <div
+                                class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                                <h3
+                                    class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <i data-lucide="trending-up" class="w-4 h-4 text-blue-500"></i>
+                                    30-Day Issue Trend
+                                </h3>
+                                <div id="lineChartEmpty"
+                                    class="hidden flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500">
+                                    <i data-lucide="inbox" class="w-12 h-12 mb-3 opacity-50"></i>
+                                    <p class="font-bold">No data available</p>
+                                    <p class="text-xs">No reports found for the last 30 days</p>
+                                </div>
+                                <div id="lineChartContainer" style="position:relative; height:320px;">
+                                    <canvas id="trendLineChart"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Pie Chart: Category Distribution -->
+                            <div
+                                class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                                <h3
+                                    class="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <i data-lucide="pie-chart" class="w-4 h-4 text-violet-500"></i>
+                                    Category Breakdown
+                                </h3>
+                                <div id="pieChartEmpty"
+                                    class="hidden flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500">
+                                    <i data-lucide="inbox" class="w-12 h-12 mb-3 opacity-50"></i>
+                                    <p class="font-bold">No data available</p>
+                                    <p class="text-xs">No category data for the last 30 days</p>
+                                </div>
+                                <div id="pieChartContainer" style="position:relative; height:320px;">
+                                    <canvas id="categoryPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feedback View -->
+                    <div id="feedbackView" class="hidden w-full space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2
+                                    class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                    <i data-lucide="message-square" class="w-6 h-6 text-blue-500"></i>
+                                    Citizen Feedback
+                                </h2>
+                                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Monitor and respond to
+                                    citizen ratings and reviews</p>
+                            </div>
+
+                            <!-- Sentiment Filter -->
+                            <div
+                                class="flex items-center gap-2 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                                <button onclick="filterFeedback('all')" id="filterFbAll"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all bg-blue-600 text-white shadow-md">All</button>
+                                <button onclick="filterFeedback(5)" id="filterFb5"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1">5
+                                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i></button>
+                                <button onclick="filterFeedback(4)" id="filterFb4"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1">4
+                                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i></button>
+                                <button onclick="filterFeedback(3)" id="filterFb3"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1">3
+                                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i></button>
+                                <button onclick="filterFeedback(2)" id="filterFb2"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1">2
+                                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i></button>
+                                <button onclick="filterFeedback(1)" id="filterFb1"
+                                    class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1">1
+                                    <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Feedback Cards Grid -->
+                        <div id="feedbackGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- Cards will be injected here -->
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="feedbackEmpty"
+                            class="hidden flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500">
+                            <div
+                                class="w-20 h-20 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                                <i data-lucide="message-square" class="w-10 h-10 opacity-20"></i>
+                            </div>
+                            <p class="text-lg font-bold">No feedback found</p>
+                            <p class="text-sm">There are no citizen reviews matching this criteria.</p>
+                        </div>
+                    </div>
+
+                    <!-- Settings View -->
+                    <div id="settingsView" class="hidden w-full space-y-6">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 gap-4">
+                            <div>
+                                <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Settings
+                                    &amp; Preferences</h1>
+                                <p class="text-slate-500 dark:text-slate-400 mt-1 text-sm">Manage your app experience
+                                    and notifications.</p>
+                            </div>
+                            <button id="adminSaveSettingsBtn" onclick="saveAdminSettings(this)"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 flex items-center w-full md:w-auto justify-center">
+                                <i data-lucide="save" class="w-4 h-4 mr-2"></i> Save Changes
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                            <!-- System Management Card -->
+                            <div
+                                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                                <div
+                                    class="border-b border-slate-100 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                        <i data-lucide="cpu" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        System Management
+                                    </h2>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 dark:text-slate-200">Dashboard Refresh
+                                                Sync</h3>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">Control data refresh
+                                                frequency for live views.</p>
+                                        </div>
+                                        <select
+                                            class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-blue-500/20 outline-none">
+                                            <option value="60">Every 1m</option>
+                                            <option value="300" selected>Every 5m</option>
+                                            <option value="900">Every 15m</option>
+                                            <option value="manual">Manual Only</option>
+                                        </select>
+                                    </div>
+                                    <hr class="border-slate-100 dark:border-slate-700">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3
+                                                class="font-bold text-slate-800 dark:text-slate-200 text-red-600 dark:text-red-400">
+                                                Maintenance Mode</h3>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">Switch Citizen Portal
+                                                to read-only for updates.</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div
+                                                class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500">
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Triage & Routing Rules -->
+                            <div
+                                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                                <div
+                                    class="border-b border-slate-100 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                        <i data-lucide="git-branch" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        Triage & SLA Rules
+                                    </h2>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-2">
+                                            <h3 class="font-bold text-slate-800 dark:text-slate-200">Auto-Escalation
+                                                Threshold</h3>
+                                            <span
+                                                class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded">48
+                                                Hours</span>
+                                        </div>
+                                        <input type="range" min="12" max="168" value="48"
+                                            class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                        <p class="text-[10px] text-slate-400 mt-2">Time before a 'Pending' report is
+                                            flagged as 'SLA Violation'.</p>
+                                    </div>
+                                    <hr class="border-slate-100 dark:border-slate-700">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 dark:text-slate-200">Smart Department
+                                                Routing</h3>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">Suggest departments
+                                                using NLP categorization.</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer" checked>
+                                            <div
+                                                class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- App Preferences Card -->
+                            <div
+                                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                                <div
+                                    class="border-b border-slate-100 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                        <i data-lucide="sliders" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        App Preferences
+                                    </h2>
+                                </div>
+                                <div class="p-6 space-y-6">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800 dark:text-slate-200 mb-2">Display Theme</h3>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <button id="adminThemeLight" onclick="setAdminTheme('light')"
+                                                class="border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold py-2 rounded-xl transition-all">Light</button>
+                                            <button id="adminThemeDark" onclick="setAdminTheme('dark')"
+                                                class="border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold py-2 rounded-xl transition-colors">Dark</button>
+                                        </div>
+                                    </div>
+                                    <hr class="border-slate-100 dark:border-slate-700">
+                                    <div>
+                                        <h3 class="font-bold text-slate-800 dark:text-slate-200 mb-2">Language</h3>
+                                        <select
+                                            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200 font-medium appearance-none cursor-pointer">
+                                            <option>English (US)</option>
+                                            <option>Spanish (ES)</option>
+                                            <option>French (FR)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Security Card -->
+                            <div
+                                class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-sm overflow-hidden">
+                                <div
+                                    class="border-b border-slate-100 dark:border-slate-700 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                                    <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                        <i data-lucide="shield" class="w-5 h-5 mr-2 text-blue-500"></i>
+                                        Security
+                                    </h2>
+                                </div>
+                                <div class="p-6 space-y-4">
+                                    <button
+                                        onclick="document.getElementById('adminChangePasswordModal').classList.remove('hidden')"
+                                        class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors focus:outline-none">
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 dark:text-slate-200">Change Password
+                                            </h3>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">Update your account
+                                                password securely.</p>
+                                        </div>
+                                        <i data-lucide="chevron-right"
+                                            class="w-5 h-5 text-slate-400 group-hover:text-blue-500"></i>
+                                    </button>
+                                    <button
+                                        onclick="document.getElementById('adminTwoFactorModal').classList.remove('hidden')"
+                                        class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors focus:outline-none">
+                                        <div>
+                                            <h3 class="font-bold text-slate-800 dark:text-slate-200">Two-Factor
+                                                Authentication</h3>
+                                            <p class="text-sm text-slate-500 dark:text-slate-400">Add an extra layer of
+                                                security to your account.</p>
+                                        </div>
+                                        <span
+                                            class="text-xs font-bold text-slate-500 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">Not
+                                            Configured</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Danger Zone -->
+                            <div class="border border-red-200 dark:border-red-900/50 rounded-2xl overflow-hidden">
+                                <div class="bg-red-50 dark:bg-red-900/20 p-6">
+                                    <h3 class="text-red-800 dark:text-red-400 font-bold text-lg mb-1">Danger Zone</h3>
+                                    <p class="text-red-600 dark:text-red-400/80 text-sm mb-4">Once you delete your
+                                        account, there is no going back. Please be certain.</p>
+                                    <button
+                                        onclick="confirm('Are you absolutely sure you want to delete your full account and all associated reports?')"
+                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all">
+                                        Delete Account
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+    </div>
+    </main>
+    </div>
+
+    <!-- Report Details Modal (Evidence & Verification Panel) -->
+    <!-- Admin Change Password Modal -->
+    <div id="adminChangePasswordModal"
+        class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80 z-[120] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700"
+            onclick="event.stopPropagation()">
+            <div
+                class="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+                    <i data-lucide="key" class="w-5 h-5 mr-2 text-blue-500"></i> Change Password
+                </h3>
+                <button onclick="document.getElementById('adminChangePasswordModal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form onsubmit="handleAdminPasswordUpdate(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">New
+                            Password</label>
+                        <input type="password" id="adminNewPass" required
+                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Confirm New
+                            Password</label>
+                        <input type="password" id="adminConfirmPass" required
+                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    </div>
+                    <div class="pt-4">
+                        <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-md shadow-blue-500/30 transition-all">
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Two-Factor Auth Modal -->
+    <div id="adminTwoFactorModal"
+        class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80 z-[120] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative border border-slate-200 dark:border-slate-700"
+            onclick="event.stopPropagation()">
+            <div
+                class="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center">
+                    <i data-lucide="smartphone" class="w-5 h-5 mr-2 text-blue-500"></i> Two-Factor Auth
+                </h3>
+                <button onclick="document.getElementById('adminTwoFactorModal').classList.add('hidden')"
+                    class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 text-center space-y-4">
+                <div
+                    class="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h4 class="text-lg font-bold text-slate-900 dark:text-white">Enhance Your Security</h4>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Two-Factor Authentication adds an extra layer of
+                    security. We will text you a code when logging in from a new device.</p>
+                <div class="pt-4">
+                    <button
+                        onclick="document.getElementById('adminTwoFactorModal').classList.add('hidden'); alert('2FA feature coming soon!');"
+                        class="bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold shadow-md transition-all w-full">
+                        Set up 2FA
+                    </button>
+                    <button onclick="document.getElementById('adminTwoFactorModal').classList.add('hidden')"
+                        class="mt-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium text-sm w-full text-center block">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="reportModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] hidden overflow-y-auto">
+        <div class="min-h-screen px-4 text-center">
+            <div
+                class="inline-block align-bottom bg-white dark:bg-slate-900 rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl w-full border border-slate-200 dark:border-slate-800 relative">
+
+                <!-- Modal Header -->
+                <div
+                    class="bg-slate-50 dark:bg-slate-800/50 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center sticky top-0 z-10">
+                    <div class="flex items-center gap-3">
+                        <h3 class="text-xl leading-6 font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i>
+                            Report Details
+                        </h3>
+                        <span id="modalHeaderUrgency"
+                            class="bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800 text-xs font-bold px-2.5 py-0.5 rounded uppercase tracking-wider">Critical</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button
+                            class="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Print
+                        </button>
+                        <button type="button"
+                            class="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 focus:outline-none p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                            onclick="document.getElementById('reportModal').classList.add('hidden')">
+                            <span class="sr-only">Close</span>
+                            <i data-lucide="x" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                        <!-- Left Column: Core Info & Timeline -->
+                        <div class="space-y-6">
+
+                            <!-- Tracking ID & Status -->
+                            <div
+                                class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 border border-blue-100 dark:border-blue-800/50">
+                                <p class="text-xs font-bold tracking-wider uppercase text-blue-500 mb-1">Tracking ID
+                                </p>
+                                <p id="modalTrackingId"
+                                    class="text-2xl font-black text-slate-900 dark:text-white font-mono mb-3">
+                                    CIV-2024-X8A9</p>
+
+                                <div class="flex items-center gap-2">
+                                    <span id="modalStatusDot" class="relative flex h-3 w-3">
+                                        <span
+                                            class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                                    </span>
+                                    <span id="modalTrackingStatus"
+                                        class="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-widest">Action
+                                        Required</span>
+                                </div>
+                            </div>
+
+                            <!-- User Info -->
+                            <div>
+                                <h4
+                                    class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                    Reporter</h4>
+                                <div class="flex items-center gap-3">
+                                    <div id="modalReporterInitials"
+                                        class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 font-bold">
+                                        JD
+                                    </div>
+                                    <div>
+                                        <p id="modalReporterName" class="font-bold text-slate-900 dark:text-slate-100">
+                                            John Doe (Verified)</p>
+                                        <p id="modalReporterEmail" class="text-xs text-slate-500 dark:text-slate-400">
+                                            john.doe@example.com</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Accountability / Lifecycle Timeline -->
+                            <div>
+                                <h4
+                                    class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                    Lifecycle Event Trail</h4>
+
+                                <ol id="modalTimeline"
+                                    class="relative border-l-2 border-blue-200 dark:border-blue-900/50 ml-3">
+                                    <li class="mb-4 ml-6">
+                                        <span
+                                            class="absolute flex items-center justify-center w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full -left-[13px] ring-4 ring-white dark:ring-slate-900 text-blue-600 dark:text-blue-400">
+                                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                        </span>
+                                        <h3
+                                            class="flex items-center mb-1 text-sm font-bold text-slate-900 dark:text-white">
+                                            Report Submitted</h3>
+                                        <time class="block mb-2 text-xs font-normal leading-none text-slate-400">Today,
+                                            09:41 AM</time>
+                                    </li>
+                                    <li class="mb-4 ml-6">
+                                        <span
+                                            class="absolute flex items-center justify-center w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full -left-[13px] ring-4 ring-white dark:ring-slate-900 text-blue-600 dark:text-blue-400">
+                                            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                                        </span>
+                                        <h3 class="mb-1 text-sm font-bold text-slate-900 dark:text-white">Auto-Routed
+                                            via AI</h3>
+                                        <time class="block mb-2 text-xs font-normal leading-none text-slate-400">Today,
+                                            09:42 AM</time>
+                                        <p
+                                            class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 p-2 rounded border border-slate-100 dark:border-slate-700">
+                                            Tagged: <span class="font-bold">Public Works</span></p>
+                                    </li>
+                                    <li class="ml-6">
+                                        <span
+                                            class="absolute flex items-center justify-center w-6 h-6 bg-slate-200 dark:bg-slate-700 rounded-full -left-[13px] ring-4 ring-white dark:ring-slate-900 text-slate-500">
+                                            <i data-lucide="clock" class="w-3 h-3"></i>
+                                        </span>
+                                        <h3 class="mb-1 text-sm font-bold text-slate-500 dark:text-slate-400">Pending
+                                            Assignment</h3>
+                                    </li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Evidence & Communication -->
+                        <div class="lg:col-span-2 space-y-6">
+
+                            <!-- Issue Details -->
+                            <div>
+                                <h2 id="modalIssueTitle" class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                                    Massive pothole
+                                    causing accidents on Main St</h2>
+                                <p id="modalIssueDesc" class="text-slate-600 dark:text-slate-300">The pothole is getting
+                                    deeper every day.
+                                    Two cars got flat tires this morning right in front of the coffee shop. It spans
+                                    almost the entire right lane.</p>
+                            </div>
+
+                            <!-- Verified Metadata -->
+                            <div
+                                class="flex flex-wrap gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="bg-blue-100 dark:bg-blue-900/50 p-1.5 rounded text-blue-600 dark:text-blue-400">
+                                        <i data-lucide="map-pin" class="w-4 h-4"></i>
+                                    </div>
+                                    <span id="modalIssueAddress"
+                                        class="text-sm font-medium text-slate-700 dark:text-slate-300">123 Main St,
+                                        Downtown</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div
+                                        class="bg-blue-100 dark:bg-blue-900/50 p-1.5 rounded text-blue-600 dark:text-blue-400">
+                                        <i data-lucide="crosshair" class="w-4 h-4"></i>
+                                    </div>
+                                    <span id="modalIssueGPS"
+                                        class="text-sm font-medium font-mono text-slate-700 dark:text-slate-300">40.7128&deg;
+                                        N, 74.0060&deg; W</span>
+                                </div>
+                            </div>
+
+                            <!-- Before / After Evidence Panel -->
+                            <div>
+                                <h4
+                                    class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
+                                    <i data-lucide="camera" class="w-4 h-4"></i> Verifiable Evidence
+                                </h4>
+
+                                <div class="grid grid-cols-3 gap-4">
+                                    <!-- Citizen Photo -->
+                                    <div class="space-y-2">
+                                        <div
+                                            class="aspect-video bg-slate-100 dark:bg-slate-800 rounded-lg border-2 border-slate-200 dark:border-slate-700 overflow-hidden relative group cursor-pointer text-center">
+                                            <img id="modalBeforePhoto" src="" alt="Reported State"
+                                                class="absolute inset-0 w-full h-full object-cover hidden" />
+                                            <!-- Placeholder for photo -->
+                                            <div id="modalBeforePlaceholder"
+                                                class="absolute inset-0 flex flex-col items-center justify-center text-slate-400">
+                                                <i data-lucide="image" class="w-8 h-8 mb-2"></i>
+                                                <span class="text-xs font-semibold">User Uploaded Image</span>
+                                            </div>
+                                            <!-- Hover Overlay -->
+                                            <div
+                                                class="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <i data-lucide="maximize-2" class="w-6 h-6 text-white mb-1"></i>
+                                            </div>
+                                        </div>
+                                        <p class="text-xs text-center font-bold text-slate-500 uppercase">Reported State
+                                        </p>
+                                    </div>
+
+                                    <!-- In Progress Photo -->
+                                    <div class="space-y-2">
+                                        <label for="inProgressPhotoUpload"
+                                            class="aspect-video bg-slate-50 dark:bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative overflow-hidden group">
+                                            <img id="modalInProgressPreview" src="" alt="In Progress"
+                                                class="absolute inset-0 w-full h-full object-cover hidden z-10" />
+                                            <div id="modalInProgressPlaceholder"
+                                                class="flex flex-col items-center justify-center group-hover:text-blue-500 transition-colors z-20">
+                                                <i data-lucide="camera" class="w-8 h-8 mb-2"></i>
+                                                <span class="text-xs font-semibold px-4 text-center">Upload progress
+                                                    photo</span>
+                                            </div>
+                                            <input type="file" id="inProgressPhotoUpload" accept="image/*"
+                                                class="hidden" />
+                                        </label>
+                                        <p class="text-xs text-center font-bold text-slate-500 uppercase">In Progress
+                                        </p>
+                                    </div>
+
+                                    <!-- Resolution Photo -->
+                                    <div class="space-y-2">
+                                        <label for="resolutionPhotoUpload"
+                                            class="aspect-video bg-slate-50 dark:bg-slate-800/50 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative overflow-hidden group">
+                                            <img id="modalResolutionPreview" src="" alt="Resolution"
+                                                class="absolute inset-0 w-full h-full object-cover hidden z-10" />
+                                            <div id="modalResolutionPlaceholder"
+                                                class="flex flex-col items-center justify-center group-hover:text-blue-500 transition-colors z-20">
+                                                <i data-lucide="upload-cloud" class="w-8 h-8 mb-2"></i>
+                                                <span class="text-xs font-semibold px-4 text-center">Upload resolution
+                                                    photo
+                                                    to close ticket</span>
+                                            </div>
+                                            <input type="file" id="resolutionPhotoUpload" accept="image/*"
+                                                class="hidden" />
+                                        </label>
+                                        <p class="text-xs text-center font-bold text-slate-500 uppercase">Verified
+                                            Resolution</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Communication Bridge -->
+                            <div class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6">
+                                <h4
+                                    class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i> Communication Bridge
+                                </h4>
+                                <div
+                                    class="bg-blue-50/50 dark:bg-slate-800/80 rounded-xl p-4 border border-blue-100 dark:border-slate-700">
+                                    <label
+                                        class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Update
+                                        Status & Message Citizen</label>
+                                    <select id="modalStatusSelect"
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700 dark:text-slate-200 mb-3">
+                                        <option value="Pending">Pending Assignment</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Resolved">Resolved</option>
+                                    </select>
+                                    <textarea id="modalMessageInput" rows="3"
+                                        class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-slate-700 dark:text-slate-200 resize-none transition-shadow"
+                                        placeholder="e.g. A crew has been dispatched to assess the damage..."></textarea>
+
+                                    <!-- Inline Error Feedback -->
+                                    <div id="modalErrorFeedback"
+                                        class="hidden mt-3 p-2.5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg text-xs tracking-wide text-red-600 dark:text-red-400 font-bold flex items-center gap-2 relative">
+                                        <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-red-600"></i>
+                                        <span id="modalErrorFeedbackText" class="text-red-600 dark:text-red-400">Please
+                                            upload the image to update the status</span>
+                                    </div>
+                                    <div class="mt-3 flex justify-between items-center">
+                                        <span id="modalUpdateFeedback"
+                                            class="text-xs text-blue-500 dark:text-blue-400 flex items-center hidden"><i
+                                                data-lucide="check-circle" class="w-3 h-3 mr-1"></i> Updated
+                                            successfully!</span>
+                                        <span class="text-xs text-slate-500 flex items-center"><i data-lucide="bell"
+                                                class="w-3 h-3 mr-1"></i> Triggers SMS/Email to user</span>
+                                        <button id="modalUpdateBtn"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm shadow-blue-200 dark:shadow-none">
+                                            Save & Update <i data-lucide="send" class="w-3 h-3"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer Actions -->
+                <div
+                    class="bg-slate-50 dark:bg-slate-800/80 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <button
+                        class="w-full sm:w-auto text-slate-600 dark:text-slate-400 font-semibold hover:text-slate-900 dark:hover:text-white px-4 py-2 transition-colors">
+                        Re-assign Dept
+                    </button>
+                    <div class="flex gap-3 w-full sm:w-auto">
+                        <button id="modalMapRouteBtn"
+                            class="w-full sm:w-auto px-6 py-2.5 rounded-xl border-2 border-blue-600 text-blue-700 dark:text-blue-400 font-bold hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+                            Map Route
+                        </button>
+                        <button
+                            class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200 dark:shadow-none transition-all hover:-translate-y-0.5"
+                            onclick="document.getElementById('reportModal').classList.add('hidden')">
+                            Dispatch Crew
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        // Init Lucide Icons
+
+        // -------------------------------------------------------------
+        // Leaflet Map Initialization & Supabase Data Fetching
+        // -------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Supabase Client
+            const _supabaseUrl = 'https://lospwkmfoutyhfjlxqll.supabase.co';
+            const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvc3B3a21mb3V0eWhmamx4cWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MzgzMDAsImV4cCI6MjA4NzAxNDMwMH0.cdmBXofteICV2dRD2W-p06t6PPxbZebecipQyf7qyF8';
+            const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+
+            // RBAC & Auth Check
+            (async () => {
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                const civicEmail = localStorage.getItem('civic_email');
+
+                let isAdmin = false;
+                let fullName = 'Admin User';
+                let currentEmail = null;
+
+                if (session && session.user) {
+                    currentEmail = session.user.email;
+                    fullName = session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+
+                    // Auth Check 1: Fallback to metadata
+                    if (session.user.user_metadata?.role === 'admin' || session.user.user_metadata?.role === 'Admin') {
+                        isAdmin = true;
+                    }
+                } else if (civicEmail) {
+                    currentEmail = civicEmail;
+                    fullName = civicEmail.split('@')[0];
+                }
+
+                // If completely unauthenticated anywhere, boot out immediately
+                if (!currentEmail) {
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                // Auth Check 2: Try to read role directly from the freshly added users table
+                try {
+                    const { data: dbUser } = await supabaseClient.from('users').select('role').eq('email', currentEmail).maybeSingle();
+                    if (dbUser && dbUser.role && dbUser.role.toLowerCase() === 'admin') {
+                        isAdmin = true;
+                    }
+                } catch (err) {
+                    console.warn("Could not fetch DB role", err);
+                }
+
+                // Auth Check 3: Check cached parameter just in case
+                const cachedRole = localStorage.getItem('civic_role');
+                if (cachedRole && cachedRole.toLowerCase() === 'admin') {
+                    isAdmin = true;
+                }
+
+                if (!isAdmin) {
+                    // Gatekeeper: If the user's role is not 'Admin', redirect them to the home page immediately
+                    window.location.replace('index.html');
+                    return;
+                }
+
+                // Update Header UI dynamically
+                const initials = fullName.substring(0, 2).toUpperCase();
+
+                const initialsEl = document.getElementById('adminProfileInitials');
+                const nameEl = document.getElementById('adminProfileName');
+
+                if (initialsEl) initialsEl.innerText = initials;
+                if (nameEl) nameEl.innerText = fullName;
+            })();
+
+            // Logout Functionality
+            const logoutBtn = document.getElementById('adminLogoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    // Clear the Supabase session
+                    await supabaseClient.auth.signOut();
+                    // Clear any local storage mock session
+                    localStorage.removeItem('civic_email');
+                    localStorage.removeItem('civic_password');
+                    // Redirect to the login screen
+                    window.location.href = 'login.html';
+                });
+            }
+
+            // 1. Initialize Map
+            // Prepare container, remove placeholder text and conflicting flex styles
+            const mapContainer = document.getElementById('adminMap');
+            mapContainer.innerHTML = '';
+            mapContainer.classList.remove('flex', 'items-center', 'justify-center');
+
+            const map = L.map('adminMap').setView([20.5937, 78.9629], 5); // Default to India
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Dark Mode Map adjustment
+            if (document.documentElement.classList.contains('dark')) {
+                document.querySelector('.leaflet-layer').style.filter = 'invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%)';
+            }
+
+            // Setup Marker Layer Group
+            const markerLayer = L.markerClusterGroup({
+                chunkedLoading: true,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false
+            }).addTo(map);
+            let heatLayer = null;
+            let isHeatmapActive = false;
+
+            // Custom SVG Icons for different statuses
+            const createSvgIcon = (color) => {
+                return L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="${color}" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8 drop-shadow-md"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3" fill="white"></circle></svg>`,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32],
+                    popupAnchor: [0, -32]
+                });
+            };
+
+            const colors = {
+                'pending': '#ef4444',     // Red
+                'in-progress': '#eab308', // Yellow
+                'resolved': '#22c55e'     // Green
+            };
+
+            function renderMapAndMetrics(data) {
+                markerLayer.clearLayers();
+                if (heatLayer) map.removeLayer(heatLayer);
+
+                let activeCount = 0;
+                let urgentCount = 0;
+                const heatData = [];
+
+                data.forEach(incident => {
+                    const status = incident.status || 'Pending';
+                    const priority = incident.priority || 'Medium';
+
+                    if (status !== 'Resolved') {
+                        activeCount++;
+                        if (priority === 'High' || priority === 'Critical') {
+                            urgentCount++;
+                        }
+                    }
+
+                    if (incident.latitude && incident.longitude) {
+                        heatData.push([incident.latitude, incident.longitude, 1]);
+
+                        let color = colors['pending'];
+                        if (status === 'In Progress') color = colors['in-progress'];
+                        if (status === 'Resolved') color = colors['resolved'];
+
+                        const icon = createSvgIcon(color);
+                        const marker = L.marker([incident.latitude, incident.longitude], { icon: icon })
+                            .bindPopup(`<b>${incident.category || 'Issue'}</b><br>Status: <span class="capitalize">${status}</span><br>Priority: ${priority}`);
+                        markerLayer.addLayer(marker);
+                    }
+                });
+
+                // Update Metrics Tiles
+                document.getElementById('total-active-count').innerText = activeCount;
+                document.getElementById('urgent-alerts-count').innerText = urgentCount;
+
+                // Setup Heatmap Layer
+                heatLayer = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 15,
+                    maxZoom: 14,
+                    gradient: { 0.4: 'blue', 0.6: 'lime', 0.8: 'yellow', 1.0: 'red' }
+                });
+
+                if (isHeatmapActive) {
+                    map.removeLayer(markerLayer);
+                    heatLayer.addTo(map);
+                }
+            }
+
+            // Smart Routing & Urgency Logic
+            function getDepartment(category) {
+                const map = {
+                    'Pothole': 'Public Works',
+                    'Streetlight': 'Electrical',
+                    'Water': 'Water & Sewer',
+                    'Garbage': 'Sanitation'
+                };
+                return map[category] || 'General Services';
+            }
+
+            function calculateUrgency(report) {
+                let score = 1; // 1-5 scale
+                if (report.priority === 'High') score = 4;
+                if (report.priority === 'Critical') score = 5;
+                if (report.priority === 'Medium') score = 2;
+
+                // Logic based on category & keywords
+                if (report.category === 'Electrical' || report.category === 'Streetlight') {
+                    if (score < 4) score = 4;
+                }
+                const desc = (report.description || '').toLowerCase();
+                if (desc.includes('danger') || desc.includes('broken') || desc.includes('emergency')) {
+                    if (score < 4) score = 4;
+                }
+                return score;
+            }
+
+            function formatTimeAgo(dateString) {
+                if (!dateString) return 'Just now';
+                const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + "y ago";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + "mo ago";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + "d ago";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + "h ago";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + "m ago";
+                return "Just now";
+            }
+
+            // Global State for UI Filtering
+            let allReportsData = [];
+            let currentFilter = 'all'; // 'all', 'critical', 'dept'
+            let searchQuery = '';
+            let currentStateFilter = 'all';
+
+            function renderListToContainer(reports, container) {
+                if (!container) return;
+                if (reports.length === 0) {
+                    container.innerHTML = '<div class="p-6 text-center text-slate-500 font-medium">No reports found matching criteria.</div>';
+                    return;
+                }
+
+                let html = '';
+                reports.forEach(report => {
+                    const dept = getDepartment(report.category);
+                    const urgency = calculateUrgency(report);
+                    const isCritical = urgency >= 4;
+                    const borderClass = isCritical ? 'border-red-500' : (urgency === 3 ? 'border-orange-500' : 'border-slate-200 dark:border-slate-700');
+                    const badgeClass = isCritical ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800' :
+                        (urgency === 3 ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-800' :
+                            'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600');
+                    const trackingId = (report.report_id || report.id).substring(0, 13).toUpperCase();
+                    const timeAgo = formatTimeAgo(report.created_at);
+
+                    const locationDisplay = report.location_text && report.location_text.trim() !== '' ? report.location_text : 'GPS Configured';
+
+                    html += `
+                        <div onclick="openReportModal('${report.id || report.report_id}')" class="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-l-4 ${borderClass} group">
+                            <div class="flex justify-between items-start mb-1.5 gap-2">
+                                <div class="flex items-start gap-2">
+                                    <input type="checkbox" class="mt-1 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer" onclick="event.stopPropagation()">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">${dept}</span>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase border flex items-center ${badgeClass}">
+                                            ${isCritical ? '<i data-lucide="flame" class="w-3 h-3 mr-1"></i> ' : ''}Score: ${urgency}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider whitespace-nowrap">${timeAgo}</span>
+                            </div>
+                            <div class="pl-6">
+                                <h3 class="font-bold text-slate-900 dark:text-slate-100 text-sm mb-1 leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">${report.category || 'Issue'}: ${report.description}</h3>
+                                <div class="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-medium mt-2">
+                                    <span class="flex items-center gap-1"><i data-lucide="hash" class="w-3.5 h-3.5"></i> ${trackingId}</span>
+                                    <span class="flex items-center gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5 shrink-0"></i> <span class="truncate max-w-[200px]">${locationDisplay}</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            }
+
+            function renderQueue() {
+                let dashFiltered = allReportsData;
+                let recentFiltered = allReportsData; // Supabase defaults to newest first order already
+
+                // 1. Dashboard Filters
+                if (searchQuery) {
+                    dashFiltered = dashFiltered.filter(r => {
+                        const idMatch = (r.report_id || r.id).toLowerCase().includes(searchQuery);
+                        const descMatch = (r.description || '').toLowerCase().includes(searchQuery);
+                        const locMatch = (r.location_text || '').toLowerCase().includes(searchQuery);
+                        const catMatch = (r.category || '').toLowerCase().includes(searchQuery);
+                        return idMatch || descMatch || locMatch || catMatch;
+                    });
+                }
+
+                if (currentStateFilter !== 'all') {
+                    dashFiltered = dashFiltered.filter(r => {
+                        const locText = (r.location_text || '').toLowerCase();
+                        return locText.includes(currentStateFilter.toLowerCase());
+                    });
+                }
+
+                if (currentFilter === 'critical') {
+                    dashFiltered = dashFiltered.filter(r => calculateUrgency(r) >= 4);
+                    recentFiltered = recentFiltered.filter(r => calculateUrgency(r) >= 4);
+                } else if (currentFilter === 'dept') {
+                    dashFiltered = dashFiltered.filter(r => getDepartment(r.category) === 'Public Works');
+                    recentFiltered = recentFiltered.filter(r => getDepartment(r.category) === 'Public Works');
+                }
+
+                renderListToContainer(dashFiltered, document.getElementById('triageQueue'));
+                // Limit recent list to 50 for all India scale performance
+                renderListToContainer(recentFiltered.slice(0, 50), document.getElementById('recentQueue'));
+
+                lucide.createIcons();
+            }
+
+            // Filter & Search Event Listeners
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    searchQuery = e.target.value.toLowerCase();
+                    renderQueue();
+                });
+            }
+
+            const stateFilterDropdown = document.getElementById('stateFilter');
+            if (stateFilterDropdown) {
+                stateFilterDropdown.addEventListener('change', (e) => {
+                    currentStateFilter = e.target.value;
+                    renderQueue();
+                });
+            }
+
+            const tabs = ['filterAll', 'filterCritical', 'filterDept'];
+            const activeTabClass = ['font-bold', 'text-blue-600', 'dark:text-blue-400', 'border-blue-600', 'dark:border-blue-400'];
+            const inactiveTabClass = ['font-semibold', 'text-slate-500', 'dark:text-slate-400', 'hover:text-slate-700', 'dark:hover:text-slate-300', 'border-transparent'];
+
+            function switchTab(clickedId, filterVal) {
+                currentFilter = filterVal;
+                tabs.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    if (id === clickedId) {
+                        el.classList.remove(...inactiveTabClass);
+                        el.classList.add(...activeTabClass);
+                    } else {
+                        el.classList.remove(...activeTabClass);
+                        el.classList.add(...inactiveTabClass);
+                    }
+                });
+                renderQueue();
+            }
+
+            document.getElementById('filterAll')?.addEventListener('click', () => switchTab('filterAll', 'all'));
+            document.getElementById('filterCritical')?.addEventListener('click', () => switchTab('filterCritical', 'critical'));
+            document.getElementById('filterDept')?.addEventListener('click', () => switchTab('filterDept', 'dept'));
+
+            // Action Panel & Status Workflow Logic
+            let activeReport = null;
+
+            window.openReportModal = function (reportId) {
+                const report = allReportsData.find(r => r.id === reportId || r.report_id === reportId);
+                if (!report) return;
+                activeReport = report;
+
+                document.getElementById('modalTrackingId').innerText = (report.report_id || report.id).substring(0, 13).toUpperCase();
+
+                const urgency = calculateUrgency(report);
+                const isCritical = urgency >= 4;
+                const modalHeaderUrgency = document.getElementById('modalHeaderUrgency');
+                modalHeaderUrgency.innerText = isCritical ? 'Critical' : (urgency === 3 ? 'High' : (urgency === 2 ? 'Medium' : 'Low'));
+                modalHeaderUrgency.className = isCritical ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800 text-xs font-bold px-2.5 py-0.5 rounded uppercase tracking-wider' :
+                    (urgency === 3 ? 'bg-orange-100 text-orange-700 border border-orange-200 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-800 text-xs font-bold px-2.5 py-0.5 rounded uppercase tracking-wider' :
+                        'bg-slate-100 text-slate-700 border border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600 text-xs font-bold px-2.5 py-0.5 rounded uppercase tracking-wider');
+
+                document.getElementById('modalTrackingStatus').innerText = report.status || 'Pending';
+
+                // Dot color
+                const dotColor = report.status === 'Resolved' ? 'bg-green-500' : (report.status === 'In Progress' ? 'bg-yellow-500' : 'bg-red-500');
+                const pingColor = report.status === 'Resolved' ? 'bg-green-400' : (report.status === 'In Progress' ? 'bg-yellow-400' : 'bg-red-400');
+                document.getElementById('modalStatusDot').innerHTML = `
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full ${pingColor} opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 ${dotColor}"></span>
+                `;
+
+                // Reporter (Mocked basic logic)
+                document.getElementById('modalReporterInitials').innerText = 'JD';
+                document.getElementById('modalReporterName').innerText = 'John Doe (Verified)';
+
+                document.getElementById('modalIssueTitle').innerText = report.category || 'Issue Reported';
+                document.getElementById('modalIssueDesc').innerText = report.description || 'No description provided.';
+                // Reverse Geocoding and Address formatting
+                const addressEl = document.getElementById('modalIssueAddress');
+                const gpsEl = document.getElementById('modalIssueGPS');
+
+                if (report.latitude && report.longitude) {
+                    gpsEl.innerText = `${report.latitude.toFixed(4)}° N, ${report.longitude.toFixed(4)}° W`;
+
+                    if (report.location_text && report.location_text.trim() !== '') {
+                        addressEl.innerText = report.location_text;
+                    } else {
+                        addressEl.innerText = 'Resolving location address...';
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${report.latitude}&lon=${report.longitude}&zoom=18&addressdetails=1`, {
+                            headers: { 'Accept-Language': 'en-US,en' }
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data && data.display_name) {
+                                    addressEl.innerText = data.display_name;
+                                } else {
+                                    addressEl.innerText = 'Text Address Unavailable';
+                                }
+                            })
+                            .catch(err => {
+                                addressEl.innerText = 'GPS Generated Location';
+                            });
+                    }
+                } else {
+                    gpsEl.innerText = 'No GPS Data';
+                    addressEl.innerText = report.location_text || 'GPS Generated Location';
+                }
+
+                // Photos
+                const beforePhoto = document.getElementById('modalBeforePhoto');
+                const beforePlaceholder = document.getElementById('modalBeforePlaceholder');
+                if (report.image_url) {
+                    beforePhoto.src = report.image_url;
+                    beforePhoto.classList.remove('hidden');
+                    beforePlaceholder.classList.add('hidden');
+                } else {
+                    beforePhoto.classList.add('hidden');
+                    beforePlaceholder.classList.remove('hidden');
+                }
+
+                // Reset Resolution Photo
+                document.getElementById('modalResolutionPreview').classList.add('hidden');
+                document.getElementById('modalResolutionPreview').src = '';
+                document.getElementById('modalResolutionPlaceholder').classList.remove('hidden');
+                document.getElementById('resolutionPhotoUpload').value = '';
+
+                // Reset In Progress Photo
+                document.getElementById('modalInProgressPreview').classList.add('hidden');
+                document.getElementById('modalInProgressPreview').src = '';
+                document.getElementById('modalInProgressPlaceholder').classList.remove('hidden');
+                document.getElementById('inProgressPhotoUpload').value = '';
+
+                // Timeline
+                const timeline = document.getElementById('modalTimeline');
+                const rTime = new Date(report.created_at).toLocaleString();
+                let timelineHTML = `
+                    <li class="mb-4 ml-6">
+                        <span class="absolute flex items-center justify-center w-6 h-6 bg-blue-100 dark:bg-blue-900 rounded-full -left-[13px] ring-4 ring-white dark:ring-slate-900 text-blue-600 dark:text-blue-400">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <h3 class="flex items-center mb-1 text-sm font-bold text-slate-900 dark:text-white">Report Submitted</h3>
+                        <time class="block mb-2 text-xs font-normal leading-none text-slate-400">${rTime}</time>
+                    </li>
+                `;
+                if (report.status === 'In Progress' || report.status === 'Resolved') {
+                    timelineHTML += `
+                    <li class="mb-4 ml-6">
+                        <span class="absolute flex items-center justify-center w-6 h-6 bg-yellow-100 dark:bg-yellow-900/50 rounded-full -left-[13px] ring-4 ring-white dark:ring-slate-900 text-yellow-600 dark:text-yellow-400">
+                            <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <h3 class="mb-1 text-sm font-bold text-slate-900 dark:text-white">In Progress</h3>
+                        <time class="block mb-2 text-xs font-normal leading-none text-slate-400">Work Initiated</time>
+                    </li>`;
+                }
+                if (report.status === 'Resolved') {
+                    timelineHTML += `
+                    <li class="mb-4 ml-6">
+                        <span class="absolute flex items-center justify-center w-6 h-6 bg-green-100 dark:bg-green-900/50 rounded-full -left-[13px] ring-4 ring-white dark:ring-slate-900 text-green-600 dark:text-green-400">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                        </span>
+                        <h3 class="mb-1 text-sm font-bold text-slate-900 dark:text-white">Resolved</h3>
+                        <time class="block mb-2 text-xs font-normal leading-none text-slate-400">Verified & Closed</time>
+                    </li>`;
+                }
+                timeline.innerHTML = timelineHTML;
+
+                // Status Update
+                const stat = window.document.getElementById('modalStatusSelect');
+                // Create option if it doesn't match default enum (like 'Pending') since some are 'Pending' but select expects 'Pending Assignment' 
+                // Fix mapping: select uses value="Pending" but shows "Pending Assignment"
+                if (report.status === 'Pending Assignment' || report.status === 'Pending') stat.value = 'Pending';
+                else if (report.status === 'In Progress') stat.value = 'In Progress';
+                else if (report.status === 'Resolved') stat.value = 'Resolved';
+                else stat.value = 'Pending';
+
+                document.getElementById('modalUpdateFeedback').classList.add('hidden');
+                document.getElementById('modalErrorFeedback').classList.add('hidden');
+                document.getElementById('modalMessageInput').value = '';
+
+                // Map Route Button state
+                const mapRouteBtn = document.getElementById('modalMapRouteBtn');
+                if (mapRouteBtn) {
+                    if (report.latitude && report.longitude) {
+                        mapRouteBtn.disabled = false;
+                        mapRouteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        mapRouteBtn.disabled = true;
+                        mapRouteBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+
+                lucide.createIcons();
+                document.getElementById('reportModal').classList.remove('hidden');
+            };
+
+            // Resolution Photo upload logic
+            document.getElementById('resolutionPhotoUpload')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const preview = document.getElementById('modalResolutionPreview');
+                        preview.src = e.target.result;
+                        preview.classList.remove('hidden');
+                        document.getElementById('modalResolutionPlaceholder').classList.add('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // In Progress Photo upload logic
+            document.getElementById('inProgressPhotoUpload')?.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        const preview = document.getElementById('modalInProgressPreview');
+                        preview.src = e.target.result;
+                        preview.classList.remove('hidden');
+                        document.getElementById('modalInProgressPlaceholder').classList.add('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Update Status Logic
+            document.getElementById('modalUpdateBtn')?.addEventListener('click', async () => {
+                if (!activeReport) return;
+                const newStatus = document.getElementById('modalStatusSelect').value;
+                const currentStatus = activeReport.status || 'Pending';
+                const message = document.getElementById('modalMessageInput').value;
+
+                const errorFeedback = document.getElementById('modalErrorFeedback');
+                errorFeedback.classList.add('hidden'); // Reset active errors
+
+                // Status Progression & Photo upload validation logic
+                const errorFeedbackText = document.getElementById('modalErrorFeedbackText');
+
+                // Enforce linear progression rule: Cannot jump from Pending to Resolved
+                if (newStatus === 'Resolved' && (currentStatus === 'Pending' || currentStatus === 'Pending Assignment')) {
+                    errorFeedbackText.innerText = "Cannot resolve directly. Status must be updated to 'In Progress' first.";
+                    errorFeedback.classList.remove('hidden');
+                    return;
+                }
+
+                // Photo Requirements
+                if (newStatus === 'In Progress' && currentStatus !== 'In Progress') {
+                    const photoInput = document.getElementById('inProgressPhotoUpload');
+                    if (!photoInput || !photoInput.files || photoInput.files.length === 0) {
+                        errorFeedbackText.innerText = "Please upload the image to update the status";
+                        errorFeedback.classList.remove('hidden');
+                        return;
+                    }
+                } else if (newStatus === 'Resolved' && currentStatus !== 'Resolved') {
+                    const photoInput = document.getElementById('resolutionPhotoUpload');
+                    if (!photoInput || !photoInput.files || photoInput.files.length === 0) {
+                        errorFeedbackText.innerText = "Please upload the image to update the status";
+                        errorFeedback.classList.remove('hidden');
+                        return;
+                    }
+                }
+
+                const btn = document.getElementById('modalUpdateBtn');
+                btn.innerHTML = 'Updating...';
+                btn.disabled = true;
+
+                // Database Update
+                const { data, error } = await supabaseClient
+                    .from('reports')
+                    .update({ status: newStatus })
+                    .eq('id', activeReport.id);
+
+                btn.innerHTML = 'Save & Update <i data-lucide="send" class="w-3 h-3"></i>';
+                btn.disabled = false;
+                lucide.createIcons();
+
+                if (error) {
+                    console.error('Update error:', error);
+                    alert("Error updating status.");
+                } else {
+                    document.getElementById('modalUpdateFeedback').classList.remove('hidden');
+                    // Notification Logic (Mock Console Log)
+                    if (message.trim() !== '') {
+                        console.log('%c[CIVIC SMS API MOCK]', 'color: #8b5cf6; font-weight: bold', `Sending update to Citizen.`);
+                        console.log(`Tracking ID: ${activeReport.report_id || activeReport.id}`);
+                        console.log(`New Status: ${newStatus}`);
+                        console.log(`Message: "${message}"`);
+                    }
+                }
+            });
+
+            // Map Route Logic
+            document.getElementById('modalMapRouteBtn')?.addEventListener('click', () => {
+                if (!activeReport || !activeReport.latitude || !activeReport.longitude) return;
+                const { latitude, longitude } = activeReport;
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`, '_blank');
+            });
+
+            async function fetchReports() {
+                const { data: reportsData, error: reportsError } = await supabaseClient
+                    .from('reports')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (reportsError) {
+                    console.error('Error fetching reports:', reportsError);
+                    return;
+                }
+                allReportsData = reportsData || [];
+
+                // Also fetch all feedback for department metrics
+                const { data: feedbackData, error: feedbackError } = await supabaseClient
+                    .from('feedback')
+                    .select('*, reports(category)');
+
+                if (!feedbackError) {
+                    allFeedbackData = feedbackData || [];
+                }
+
+                renderMapAndMetrics(allReportsData);
+                renderQueue();
+            }
+
+            // Realtime Subscription
+            supabaseClient
+                .channel('public:reports')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, payload => {
+                    console.log('Realtime update:', payload);
+                    fetchReports();
+                })
+                .subscribe();
+
+            // Initial Fetch
+            fetchReports();
+
+            // 4. Heatmap Toggle Logic
+            const toggleBtn = document.getElementById('heatmapToggleBtn');
+            const toggleIcon = document.getElementById('heatmapToggleIcon');
+
+            toggleBtn.addEventListener('click', () => {
+                isHeatmapActive = !isHeatmapActive;
+                if (isHeatmapActive) {
+                    map.removeLayer(markerLayer);
+                    if (heatLayer) heatLayer.addTo(map);
+                    toggleBtn.classList.add('bg-orange-50', 'dark:bg-orange-900/40', 'border-orange-200', 'dark:border-orange-800');
+                    toggleIcon.classList.add('text-orange-600', 'dark:text-orange-400');
+                } else {
+                    if (heatLayer) map.removeLayer(heatLayer);
+                    markerLayer.addTo(map);
+                    toggleBtn.classList.remove('bg-orange-50', 'dark:bg-orange-900/40', 'border-orange-200', 'dark:border-orange-800');
+                    toggleIcon.classList.remove('text-orange-600', 'dark:text-orange-400');
+                }
+            });
+
+            // 5. Dashboard / Map / Departments / Analytics / Feedback Navigation
+            const navDashboard = document.getElementById('navDashboard');
+            const navLiveMap = document.getElementById('navLiveMap');
+            const navRecentReports = document.getElementById('navRecentReports');
+            const navDepartments = document.getElementById('navDepartments');
+            const navAnalytics = document.getElementById('navAnalytics');
+            const navFeedback = document.getElementById('navFeedback');
+            const viewDashboard = document.getElementById('dashboardView');
+            const viewMap = document.getElementById('mapView');
+            const viewRecentReports = document.getElementById('recentReportsView');
+            const viewDepartments = document.getElementById('departmentsView');
+            const viewAnalytics = document.getElementById('analyticsView');
+            const viewFeedback = document.getElementById('feedbackView');
+            const viewSettings = document.getElementById('settingsView');
+            const navSettings = document.getElementById('navSettings');
+
+            function activateView(activeNav, activeView) {
+                [viewDashboard, viewMap, viewRecentReports, viewDepartments, viewAnalytics, viewFeedback, viewSettings].forEach(v => {
+                    if (v) {
+                        v.classList.remove('block');
+                        v.classList.add('hidden');
+                    }
+                });
+                if (activeView) {
+                    activeView.classList.remove('hidden');
+                    activeView.classList.add('block');
+                }
+
+                [navDashboard, navLiveMap, navRecentReports, navDepartments, navAnalytics, navFeedback, navSettings].forEach(n => {
+                    if (n) {
+                        n.classList.remove('bg-blue-700', 'dark:bg-blue-900/30', 'text-white', 'dark:text-blue-400', 'font-semibold');
+                        n.classList.add('text-blue-100', 'dark:text-slate-400', 'font-medium');
+                    }
+                });
+                if (activeNav) {
+                    activeNav.classList.remove('text-blue-100', 'dark:text-slate-400', 'font-medium');
+                    activeNav.classList.add('bg-blue-700', 'dark:bg-blue-900/30', 'text-white', 'dark:text-blue-400', 'font-semibold');
+                }
+
+                if (activeView === viewMap) {
+                    setTimeout(() => map.invalidateSize(), 150);
+                }
+                if (activeView === viewDepartments) {
+                    renderDepartmentCards();
+                }
+                if (activeView === viewAnalytics) {
+                    renderAnalyticsCharts();
+                }
+                if (activeView === viewFeedback) {
+                    fetchFeedback();
+                }
+                if (activeView === viewSettings) {
+                    // Sync theme buttons with current theme
+                    const currentTheme = localStorage.getItem('civic_theme') || 'light';
+                    setAdminTheme(currentTheme);
+                    lucide.createIcons();
+                }
+            }
+
+            // --- Department Cards Rendering ---
+            const departmentConfig = [
+                { name: 'Public Works', icon: 'hard-hat', color: 'blue', description: 'Roads, bridges, potholes & infrastructure maintenance' },
+                { name: 'Sanitation', icon: 'trash-2', color: 'emerald', description: 'Waste collection, garbage disposal & cleanliness' },
+                { name: 'Water & Sewer', icon: 'droplets', color: 'sky', description: 'Water supply, drainage & sewage management' },
+                { name: 'Electrical', icon: 'zap', color: 'amber', description: 'Streetlights, power lines & electrical infrastructure' },
+            ];
+
+            function renderDepartmentCards() {
+                const grid = document.getElementById('deptCardsGrid');
+                const skeleton = document.getElementById('deptSkeletonLoader');
+                const syncStatus = document.getElementById('deptSyncStatus');
+
+                if (!allReportsData || allReportsData.length === 0) {
+                    skeleton.classList.remove('hidden');
+                    grid.classList.add('hidden');
+                    return;
+                }
+
+                // Calculate metrics for ranking
+                const deptMetrics = departmentConfig.map(dept => {
+                    const deptReports = allReportsData.filter(r => getDepartment(r.category) === dept.name);
+                    const totalReports = deptReports.length;
+                    const resolvedReports = deptReports.filter(r => r.status === 'Resolved').length;
+                    const activeIssues = deptReports.filter(r => r.status !== 'Resolved').length;
+                    const inProgress = deptReports.filter(r => r.status === 'In Progress').length;
+                    const pendingCount = deptReports.filter(r => r.status !== 'Resolved' && r.status !== 'In Progress').length;
+                    const efficiency = (activeIssues + resolvedReports) > 0 ? Math.round((resolvedReports / (activeIssues + resolvedReports)) * 100) : 0;
+
+                    // Calculate Citizen Satisfaction
+                    const deptFeedback = allFeedbackData.filter(f => f.assigned_department === dept.name);
+                    const reviewCount = deptFeedback.length;
+                    const avgRating = reviewCount > 0 ? (deptFeedback.reduce((sum, f) => sum + f.rating, 0) / reviewCount).toFixed(1) : null;
+
+                    return { ...dept, totalReports, resolvedReports, activeIssues, inProgress, pendingCount, efficiency, avgRating, reviewCount };
+                });
+
+                // Sort by efficiency descending for ranking
+                const ranked = [...deptMetrics].sort((a, b) => b.efficiency - a.efficiency);
+                const rankMap = {};
+                ranked.forEach((d, i) => { rankMap[d.name] = i + 1; });
+
+                let html = '';
+                deptMetrics.forEach(dept => {
+                    const rank = rankMap[dept.name];
+
+                    // Status dot: >10 Red, 5-10 Yellow, <5 Green
+                    const statusDotColor = dept.activeIssues > 10 ? 'bg-red-500' : (dept.activeIssues >= 5 ? 'bg-yellow-500' : 'bg-green-500');
+                    const statusDotGlow = dept.activeIssues > 10 ? 'shadow-[0_0_10px_rgba(239,68,68,0.6)]' : (dept.activeIssues >= 5 ? 'shadow-[0_0_10px_rgba(234,179,8,0.6)]' : 'shadow-[0_0_10px_rgba(34,197,94,0.6)]');
+                    const statusLabel = dept.activeIssues > 10 ? 'Overloaded' : (dept.activeIssues >= 5 ? 'Busy' : 'Available');
+                    const statusTextColor = dept.activeIssues > 10 ? 'text-red-500' : (dept.activeIssues >= 5 ? 'text-yellow-500' : 'text-green-500');
+
+                    // Efficiency ranking badge
+                    let rankBadge = '';
+                    if (rank === 1) rankBadge = '<span class="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">🏆 Top Performer</span>';
+                    else if (rank === 2) rankBadge = '<span class="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full">🥈 Runner Up</span>';
+                    else if (rank === deptMetrics.length) rankBadge = '<span class="inline-flex items-center gap-1 text-[10px] font-bold bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-full">⚠️ Needs Attention</span>';
+                    else rankBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full">#${rank} Rank</span>`;
+
+                    // Progress bar: Green if Resolved >= Active, Red if Active > Resolved
+                    const isPerforming = dept.resolvedReports >= dept.activeIssues;
+                    const barColor = isPerforming ? 'bg-green-500 dark:bg-green-400' : 'bg-red-500 dark:bg-red-400';
+                    const barTrack = isPerforming ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30';
+                    const effLabel = isPerforming ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+
+                    // Escape ampersand for onclick
+                    const safeName = dept.name.replace(/&/g, '&amp;');
+
+                    html += `
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 hover:scale-[1.02] hover:shadow-xl hover:border-${dept.color}-400 dark:hover:border-${dept.color}-500 transition-all duration-300 group relative overflow-hidden">
+                        
+                        <!-- Decorative Background Gradient -->
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-${dept.color}-100/50 dark:from-${dept.color}-900/20 to-transparent rounded-bl-full pointer-events-none"></div>
+                        
+
+
+                        <!-- Header (clickable to filter) -->
+                        <div onclick="filterByDepartment('${safeName}')" class="cursor-pointer">
+                            <div class="flex items-center gap-4 mb-2 relative">
+                                <div class="w-14 h-14 rounded-2xl bg-${dept.color}-100 dark:bg-${dept.color}-900/30 flex items-center justify-center text-${dept.color}-600 dark:text-${dept.color}-400 group-hover:scale-110 transition-transform duration-300 shadow-sm">
+                                    <i data-lucide="${dept.icon}" class="w-7 h-7"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-black text-slate-900 dark:text-white tracking-tight truncate">${dept.name}</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">${dept.description}</p>
+                                </div>
+                            </div>
+                            <div class="mb-4">${rankBadge}</div>
+                        </div>
+
+                        <!-- Metrics Grid -->
+                        <div>
+                            <div class="grid grid-cols-3 gap-3 mb-5">
+                                <div onclick="event.stopPropagation(); filterByDeptStatus('${safeName}', 'active')" class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 hover:ring-1 hover:ring-red-300 dark:hover:ring-red-800 transition-all" title="Click to view active issues">
+                                    <p class="text-2xl font-black text-red-600 dark:text-red-400">${dept.activeIssues}</p>
+                                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Active</p>
+                                </div>
+                                <div onclick="filterByDepartment('${safeName}')" class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-all" title="Click to view all issues">
+                                    <p class="text-2xl font-black text-slate-900 dark:text-white">${dept.inProgress}</p>
+                                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">In Progress</p>
+                                </div>
+                                <div onclick="event.stopPropagation(); filterByDeptStatus('${safeName}', 'resolved')" class="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-3 text-center cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 hover:ring-1 hover:ring-green-300 dark:hover:ring-green-800 transition-all" title="Click to view resolved issues">
+                                    <p class="text-2xl font-black text-green-600 dark:text-green-400">${dept.resolvedReports}</p>
+                                    <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-1">Resolved</p>
+                                </div>
+                            </div>
+
+                            <!-- Satisfaction Metric -->
+                            <div class="flex items-center justify-between mb-4 px-1">
+                                <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Citizen Satisfaction</span>
+                                <div class="flex items-center gap-1.5" title="Based on ${dept.reviewCount} citizen reviews">
+                                    ${dept.avgRating ? `
+                                        <span class="text-sm font-black ${dept.avgRating >= 4 ? 'text-green-600 dark:text-green-400' : (dept.avgRating >= 3 ? 'text-yellow-600 dark:text-yellow-500' : 'text-red-600 dark:text-red-500')}">${dept.avgRating}</span>
+                                        <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+                                    ` : `
+                                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest italic">No Ratings Yet</span>
+                                    `}
+                                </div>
+                            </div>
+                        
+                            <!-- Efficiency Bar -->
+                            <div class="relative mb-4">
+                                <div class="flex justify-between items-baseline mb-2">
+                                    <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Efficiency Score</span>
+                                    <span class="text-sm font-black ${effLabel}">${dept.efficiency}%</span>
+                                </div>
+                                <div class="w-full h-2.5 ${barTrack} rounded-full overflow-hidden">
+                                    <div class="h-full ${barColor} rounded-full transition-all duration-1000 ease-out" style="width: ${dept.efficiency}%"></div>
+                                </div>
+                                <div class="flex justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-medium">
+                                    <span>${dept.resolvedReports} resolved</span>
+                                    <span>${dept.totalReports} total</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Action Buttons -->
+                        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+                            <div class="flex items-center gap-2">
+                                <button onclick="event.stopPropagation(); openBroadcast('${safeName}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-bold transition-colors" title="Broadcast to Field Officers">
+                                    <i data-lucide="radio" class="w-3.5 h-3.5"></i> Broadcast
+                                </button>
+                                <button onclick="event.stopPropagation(); openTransfer('${safeName}', ${dept.pendingCount})" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/50 text-xs font-bold transition-colors" title="Transfer Pending Tasks">
+                                    <i data-lucide="arrow-right-left" class="w-3.5 h-3.5"></i> Transfer
+                                </button>
+                            </div>
+                            <button onclick="filterByDepartment('${safeName}')" class="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500 font-medium hover:text-${dept.color}-500 dark:hover:text-${dept.color}-400 transition-colors cursor-pointer">
+                                <i data-lucide="filter" class="w-3 h-3"></i> Filter
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>`;
+                });
+
+                grid.innerHTML = html;
+                skeleton.classList.add('hidden');
+                grid.classList.remove('hidden');
+                syncStatus.innerText = 'Live \u00b7 ' + new Date().toLocaleTimeString();
+                lucide.createIcons();
+            }
+
+            // --- Broadcast & Transfer Modal Functions ---
+            let broadcastTargetDept = '';
+            let transferSourceDept = '';
+
+            window.openBroadcast = function (deptName) {
+                broadcastTargetDept = deptName;
+                document.getElementById('broadcastDeptName').innerText = 'Broadcast to ' + deptName;
+                document.getElementById('broadcastMessage').value = '';
+                document.getElementById('broadcastSuccess').classList.add('hidden');
+                document.getElementById('broadcastModal').classList.remove('hidden');
+                lucide.createIcons();
+            };
+
+            window.sendBroadcast = function () {
+                const msg = document.getElementById('broadcastMessage').value.trim();
+                if (!msg) return;
+                console.log('%c[CIVIC BROADCAST]', 'color: #6366f1; font-weight: bold', `To: ${broadcastTargetDept} Field Officers`);
+                console.log(`Message: "${msg}"`);
+                document.getElementById('broadcastSuccess').classList.remove('hidden');
+                setTimeout(() => { document.getElementById('broadcastModal').classList.add('hidden'); }, 1500);
+            };
+
+            window.openTransfer = function (deptName, pendingCount) {
+                transferSourceDept = deptName;
+                document.getElementById('transferFromDept').innerText = deptName;
+                document.getElementById('transferPendingCount').innerText = pendingCount + ' pending task(s) will be transferred.';
+                document.getElementById('transferSuccess').classList.add('hidden');
+                // Populate dropdown with other departments
+                const select = document.getElementById('transferTargetDept');
+                select.innerHTML = departmentConfig
+                    .filter(d => d.name !== deptName)
+                    .map(d => `<option value="${d.name}">${d.name}</option>`)
+                    .join('');
+                document.getElementById('transferModal').classList.remove('hidden');
+                lucide.createIcons();
+            };
+
+            window.executeTransfer = function () {
+                const target = document.getElementById('transferTargetDept').value;
+                console.log('%c[CIVIC TRANSFER]', 'color: #f59e0b; font-weight: bold', `From: ${transferSourceDept} → To: ${target}`);
+                console.log('All pending tasks re-assigned.');
+                document.getElementById('transferSuccess').classList.remove('hidden');
+                setTimeout(() => { document.getElementById('transferModal').classList.add('hidden'); }, 1500);
+            };
+
+            // --- Click-to-Filter: Show inline filtered reports within Departments view ---
+            let deptFilterActive = null;
+            window.filterByDepartment = function (deptName) {
+                deptName = deptName.replace(/&amp;/g, '&');
+                deptFilterActive = deptName;
+
+                const filtered = allReportsData.filter(r => getDepartment(r.category) === deptName);
+
+                const container = document.getElementById('deptFilteredReports');
+                const queue = document.getElementById('deptFilteredQueue');
+                const title = document.getElementById('deptFilterTitle');
+                title.innerHTML = `<i data-lucide="filter" class="w-5 h-5 mr-2 text-blue-500"></i> ${deptName} — All ${filtered.length} Report(s)`;
+                renderListToContainer(filtered, queue);
+                container.classList.remove('hidden');
+                lucide.createIcons();
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+
+            // Status-specific filter: active or resolved
+            window.filterByDeptStatus = function (deptName, status) {
+                deptName = deptName.replace(/&amp;/g, '&');
+                deptFilterActive = deptName;
+
+                let filtered;
+                let label;
+                if (status === 'active') {
+                    filtered = allReportsData.filter(r => getDepartment(r.category) === deptName && r.status !== 'Resolved');
+                    label = `<i data-lucide="alert-circle" class="w-5 h-5 mr-2 text-red-500"></i> ${deptName} — ${filtered.length} Active Report(s)`;
+                } else {
+                    filtered = allReportsData.filter(r => getDepartment(r.category) === deptName && r.status === 'Resolved');
+                    label = `<i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-500"></i> ${deptName} — ${filtered.length} Resolved Report(s)`;
+                }
+
+                const container = document.getElementById('deptFilteredReports');
+                const queue = document.getElementById('deptFilteredQueue');
+                const title = document.getElementById('deptFilterTitle');
+                title.innerHTML = label;
+                renderListToContainer(filtered, queue);
+                container.classList.remove('hidden');
+                lucide.createIcons();
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            };
+
+            window.closeDeptFilter = function () {
+                deptFilterActive = null;
+                document.getElementById('deptFilteredReports').classList.add('hidden');
+            };
+
+            if (navDashboard) navDashboard.addEventListener('click', (e) => { e.preventDefault(); activateView(navDashboard, viewDashboard); });
+            if (navLiveMap) navLiveMap.addEventListener('click', (e) => { e.preventDefault(); activateView(navLiveMap, viewMap); });
+            if (navRecentReports) navRecentReports.addEventListener('click', (e) => { e.preventDefault(); activateView(navRecentReports, viewRecentReports); });
+            if (navDepartments) navDepartments.addEventListener('click', (e) => { e.preventDefault(); activateView(navDepartments, viewDepartments); });
+            if (navAnalytics) navAnalytics.addEventListener('click', (e) => { e.preventDefault(); activateView(navAnalytics, viewAnalytics); });
+            if (navFeedback) navFeedback.addEventListener('click', (e) => { e.preventDefault(); activateView(navFeedback, viewFeedback); });
+            if (navSettings) navSettings.addEventListener('click', (e) => { e.preventDefault(); activateView(navSettings, viewSettings); });
+
+            // --- Admin Settings Functionality ---
+            window.saveAdminSettings = function (btn) {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader" class="w-4 h-4 animate-spin mr-2"></i> Saving...';
+                btn.disabled = true;
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    btn.innerHTML = '<i data-lucide="check" class="w-4 h-4 mr-2"></i> Saved';
+                    btn.classList.replace('bg-blue-600', 'bg-green-600');
+                    lucide.createIcons();
+                    setTimeout(() => {
+                        btn.innerHTML = original;
+                        btn.classList.replace('bg-green-600', 'bg-blue-600');
+                        btn.disabled = false;
+                        lucide.createIcons();
+                    }, 2000);
+                }, 1000);
+            };
+
+            window.setAdminTheme = function (theme) {
+                const html = document.documentElement;
+                const lightBtn = document.getElementById('adminThemeLight');
+                const darkBtn = document.getElementById('adminThemeDark');
+
+                if (theme === 'dark') {
+                    html.classList.add('dark');
+                    localStorage.setItem('civic_theme', 'dark');
+                    darkBtn.className = "border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-all";
+                    lightBtn.className = "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold py-2.5 rounded-xl transition-colors";
+                } else {
+                    html.classList.remove('dark');
+                    localStorage.setItem('civic_theme', 'light');
+                    lightBtn.className = "border-2 border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-bold py-2.5 rounded-xl transition-all";
+                    darkBtn.className = "border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold py-2.5 rounded-xl transition-colors";
+                }
+            };
+
+            window.handleAdminPasswordUpdate = async function (e) {
+                e.preventDefault();
+                const p1 = document.getElementById('adminNewPass').value;
+                const p2 = document.getElementById('adminConfirmPass').value;
+                if (p1 !== p2) { alert('Passwords do not match'); return; }
+
+                try {
+                    const { error } = await supabaseClient.auth.updateUser({ password: p1 });
+                    if (error) throw error;
+                    alert('Password updated successfully!');
+                    e.target.reset();
+                } catch (err) {
+                    alert('Error: ' + err.message);
+                }
+            };
+
+            window.handleAdminLogout = function () {
+                localStorage.removeItem('admin_session');
+                window.location.href = 'login.html';
+            };
+
+            // Sidebar Toggle
+            window.toggleAdminSidebar = function () {
+                const sidebar = document.getElementById('adminSidebar');
+                if (sidebar.classList.contains('-translate-x-full')) {
+                    sidebar.classList.remove('-translate-x-full');
+                } else {
+                    sidebar.classList.add('-translate-x-full');
+                }
+            };
+
+            // --- Analytics Charts Rendering ---
+            let trendChart = null;
+            let pieChart = null;
+
+            function renderAnalyticsCharts() {
+                if (!allReportsData) return;
+
+                const now = new Date();
+                const thirtyDaysAgo = new Date(now);
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+                // Filter to last 30 days
+                const recentReports = allReportsData.filter(r => {
+                    const d = new Date(r.created_at);
+                    return d >= thirtyDaysAgo;
+                });
+
+                // Summary stats
+                const totalReported = recentReports.length;
+                const totalResolved = recentReports.filter(r => r.status === 'Resolved').length;
+                const resolutionRate = totalReported > 0 ? Math.round((totalResolved / totalReported) * 100) : 0;
+
+                document.getElementById('statTotalReported').innerText = totalReported;
+                document.getElementById('statTotalResolved').innerText = totalResolved;
+                document.getElementById('statResolutionRate').innerText = resolutionRate + '%';
+
+                // Top category
+                const catCounts = {};
+                recentReports.forEach(r => {
+                    const cat = r.category || 'Unknown';
+                    catCounts[cat] = (catCounts[cat] || 0) + 1;
+                });
+                const topCat = Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0];
+                document.getElementById('statTopCategory').innerText = topCat ? topCat[0] : '\u2014';
+
+                // === LINE CHART: 30-Day Trend ===
+                const lineChartEmpty = document.getElementById('lineChartEmpty');
+                const lineChartContainer = document.getElementById('lineChartContainer');
+
+                if (totalReported === 0) {
+                    lineChartEmpty.classList.remove('hidden');
+                    lineChartContainer.classList.add('hidden');
+                } else {
+                    lineChartEmpty.classList.add('hidden');
+                    lineChartContainer.classList.remove('hidden');
+
+                    // Build daily data for 30 days
+                    const labels = [];
+                    const reportedData = [];
+                    const resolvedData = [];
+
+                    for (let i = 29; i >= 0; i--) {
+                        const d = new Date(now);
+                        d.setDate(d.getDate() - i);
+                        const dateStr = d.toISOString().split('T')[0];
+                        const dayLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        labels.push(dayLabel);
+
+                        const dayReports = recentReports.filter(r => r.created_at && r.created_at.startsWith(dateStr));
+                        reportedData.push(dayReports.length);
+                        resolvedData.push(dayReports.filter(r => r.status === 'Resolved').length);
+                    }
+
+                    // Destroy old chart if exists
+                    if (trendChart) { trendChart.destroy(); trendChart = null; }
+
+                    const ctx = document.getElementById('trendLineChart').getContext('2d');
+                    trendChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Issues Reported',
+                                    data: reportedData,
+                                    borderColor: '#6366f1',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                    borderWidth: 2.5,
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointRadius: 3,
+                                    pointBackgroundColor: '#6366f1',
+                                    pointHoverRadius: 6,
+                                    pointHoverBackgroundColor: '#6366f1',
+                                },
+                                {
+                                    label: 'Issues Resolved',
+                                    data: resolvedData,
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    borderWidth: 2.5,
+                                    tension: 0.4,
+                                    fill: true,
+                                    pointRadius: 3,
+                                    pointBackgroundColor: '#10b981',
+                                    pointHoverRadius: 6,
+                                    pointHoverBackgroundColor: '#10b981',
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: { mode: 'index', intersect: false },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: {
+                                        color: '#94a3b8',
+                                        font: { family: 'Inter', weight: 600, size: 11 },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 20,
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#1e293b',
+                                    titleColor: '#f1f5f9',
+                                    bodyColor: '#e2e8f0',
+                                    borderColor: '#334155',
+                                    borderWidth: 1,
+                                    titleFont: { family: 'Inter', weight: 700, size: 12 },
+                                    bodyFont: { family: 'Inter', size: 11 },
+                                    padding: 12,
+                                    cornerRadius: 10,
+                                    displayColors: true,
+                                    usePointStyle: true,
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: { color: '#334155', lineWidth: 0.5, drawBorder: false },
+                                    ticks: {
+                                        color: '#64748b',
+                                        font: { family: 'Inter', size: 10, weight: 500 },
+                                        maxRotation: 45,
+                                        maxTicksLimit: 10,
+                                    },
+                                    title: { display: true, text: 'Date', color: '#94a3b8', font: { family: 'Inter', weight: 700, size: 11 } }
+                                },
+                                y: {
+                                    grid: { color: '#334155', lineWidth: 0.5, drawBorder: false },
+                                    ticks: {
+                                        color: '#64748b',
+                                        font: { family: 'Inter', size: 10, weight: 500 },
+                                        stepSize: 1,
+                                    },
+                                    title: { display: true, text: 'Count', color: '#94a3b8', font: { family: 'Inter', weight: 700, size: 11 } },
+                                    beginAtZero: true,
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // === PIE CHART: Category Distribution ===
+                const pieChartEmpty = document.getElementById('pieChartEmpty');
+                const pieChartContainer = document.getElementById('pieChartContainer');
+
+                if (totalReported === 0 || Object.keys(catCounts).length === 0) {
+                    pieChartEmpty.classList.remove('hidden');
+                    pieChartContainer.classList.add('hidden');
+                } else {
+                    pieChartEmpty.classList.add('hidden');
+                    pieChartContainer.classList.remove('hidden');
+
+                    const pieLabels = Object.keys(catCounts);
+                    const pieData = Object.values(catCounts);
+                    const pieColors = [
+                        '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                        '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#84cc16',
+                        '#a855f7', '#0ea5e9'
+                    ];
+
+                    if (pieChart) { pieChart.destroy(); pieChart = null; }
+
+                    const pctx = document.getElementById('categoryPieChart').getContext('2d');
+                    pieChart = new Chart(pctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: pieLabels,
+                            datasets: [{
+                                data: pieData,
+                                backgroundColor: pieColors.slice(0, pieLabels.length),
+                                borderColor: '#1e293b',
+                                borderWidth: 2,
+                                hoverOffset: 8,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '55%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        color: '#94a3b8',
+                                        font: { family: 'Inter', weight: 600, size: 11 },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle',
+                                        padding: 14,
+                                    }
+                                },
+                                tooltip: {
+                                    backgroundColor: '#1e293b',
+                                    titleColor: '#f1f5f9',
+                                    bodyColor: '#e2e8f0',
+                                    borderColor: '#334155',
+                                    borderWidth: 1,
+                                    titleFont: { family: 'Inter', weight: 700, size: 12 },
+                                    bodyFont: { family: 'Inter', size: 11 },
+                                    padding: 12,
+                                    cornerRadius: 10,
+                                    callbacks: {
+                                        label: function (context) {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const pct = Math.round((context.parsed / total) * 100);
+                                            return ` ${context.label}: ${context.parsed} (${pct}%)`;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                lucide.createIcons();
+            }
+
+            // --- Citizen Feedback Logic ---
+            let allFeedbackData = [];
+            let currentFbFilter = 'all';
+
+            window.fetchFeedback = async function () {
+                const grid = document.getElementById('feedbackGrid');
+                const empty = document.getElementById('feedbackEmpty');
+
+                // Show loading state if needed - for now just clear
+                grid.innerHTML = '';
+
+                const { data, error } = await supabaseClient
+                    .from('feedback')
+                    .select('*, reports(category)')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('Error fetching feedback:', error);
+                    // If table doesn't exist yet, we'll show empty
+                    allFeedbackData = [];
+                } else {
+                    allFeedbackData = data || [];
+                }
+
+                renderFeedbackGrid();
+            };
+
+            window.renderFeedbackGrid = function () {
+                const grid = document.getElementById('feedbackGrid');
+                const empty = document.getElementById('feedbackEmpty');
+
+                let filtered = allFeedbackData;
+                if (currentFbFilter !== 'all') {
+                    filtered = allFeedbackData.filter(f => f.rating === parseInt(currentFbFilter));
+                }
+
+                if (filtered.length === 0) {
+                    grid.classList.add('hidden');
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                grid.classList.remove('hidden');
+                empty.classList.add('hidden');
+
+                grid.innerHTML = filtered.map(item => {
+                    const stars = Array(5).fill(0).map((_, i) => `
+                        <i data-lucide="star" class="w-4 h-4 ${i < item.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}"></i>
+                    `).join('');
+
+                    const adminReplySection = item.admin_reply ? `
+                        <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                            <p class="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">Admin Response</p>
+                            <p class="text-sm text-slate-700 dark:text-slate-300 italic">"${item.admin_reply}"</p>
+                        </div>
+                    ` : `
+                        <div id="replyAction-${item.id}" class="mt-4">
+                            <button onclick="toggleReplyForm('${item.id}')" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                                <i data-lucide="reply" class="w-3 h-3"></i> Reply to Feedback
+                            </button>
+                        </div>
+                        <div id="replyForm-${item.id}" class="hidden mt-4 space-y-2">
+                            <textarea id="replyText-${item.id}" placeholder="Type your response..." class="w-full p-3 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none resize-none" rows="2"></textarea>
+                            <div class="flex gap-2">
+                                <button onclick="submitReply('${item.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-lg transition-colors">Send Reply</button>
+                                <button onclick="toggleReplyForm('${item.id}')" class="px-3 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold py-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">Cancel</button>
+                            </div>
+                        </div>
+                    `;
+
+                    return `
+                        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
+                            <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-100/50 dark:from-slate-700/20 to-transparent rounded-bl-full pointer-events-none"></div>
+                            
+                            <div class="flex justify-between items-start mb-4 relative z-10">
+                                <div class="flex items-center gap-1">${stars}</div>
+                                <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">${timeAgo(item.created_at)}</span>
+                            </div>
+
+                            <div class="flex items-center gap-2 mb-3">
+                                <a href="#" onclick="event.preventDefault(); openReportDetailsById('${item.report_id}')" class="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                                    #${item.report_id}
+                                </a>
+                                ${item.reports && item.reports.category ? `
+                                    <span class="px-1.5 py-0.5 rounded text-[8px] font-bold tracking-widest uppercase bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600">${item.reports.category}</span>
+                                ` : ''}
+                            </div>
+
+                            <blockquote class="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-4 italic border-l-4 border-slate-200 dark:border-slate-700 pl-4 py-1">
+                                "${item.comment || 'No comment provided.'}"
+                            </blockquote>
+
+                            ${adminReplySection}
+                        </div>
+                    `;
+                }).join('');
+
+                lucide.createIcons();
+            };
+
+            window.filterFeedback = function (rating) {
+                currentFbFilter = rating;
+
+                // Update UI state
+                const buttons = ['all', 1, 2, 3, 4, 5];
+                buttons.forEach(b => {
+                    const btn = document.getElementById('filterFb' + (b === 'all' ? 'All' : b));
+                    if (b === rating) {
+                        btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                        btn.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-700');
+                    } else {
+                        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                        btn.classList.add('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-700');
+                    }
+                });
+
+                renderFeedbackGrid();
+            };
+
+            window.toggleReplyForm = function (id) {
+                const form = document.getElementById('replyForm-' + id);
+                const action = document.getElementById('replyAction-' + id);
+                form.classList.toggle('hidden');
+                action.classList.toggle('hidden');
+            };
+
+            window.submitReply = async function (id) {
+                const text = document.getElementById('replyText-' + id).value.trim();
+                if (!text) return;
+
+                const { error } = await supabaseClient
+                    .from('feedback')
+                    .update({ admin_reply: text })
+                    .eq('id', id);
+
+                if (error) {
+                    alert('Error saving reply: ' + error.message);
+                } else {
+                    // Update local data
+                    const item = allFeedbackData.find(f => f.id === id || f.id == id);
+                    if (item) item.admin_reply = text;
+                    renderFeedbackGrid();
+                }
+            };
+
+            window.openReportDetailsById = async function (report_id) {
+                // Find report in allReportsData
+                const report = allReportsData.find(r => r.report_id === report_id || r.id == report_id);
+                if (report) {
+                    openReportDetails(report);
+                } else {
+                    // Try fetching from DB if not in local memory
+                    const { data, error } = await supabaseClient
+                        .from('reports')
+                        .select('*')
+                        .or(`report_id.eq.${report_id},id.eq.${report_id}`)
+                        .single();
+                    if (data) openReportDetails(data);
+                    else alert('Report not found.');
+                }
+            };
+
+            function timeAgo(date) {
+                if (!date) return '—';
+                const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + "y ago";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + "mo ago";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + "d ago";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + "h ago";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + "m ago";
+                return Math.floor(seconds) + "s ago";
+            }
+
+            // Map resize bug fix required for initial load
+            setTimeout(() => { map.invalidateSize(); }, 500);
+        });
+
+        // Sidebar Toggle for Mobile
+        function toggleAdminSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+    </script>
+</body>
+
+</html>

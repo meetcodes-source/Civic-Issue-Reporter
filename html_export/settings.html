@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Citizen Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 dark:bg-slate-900 h-screen flex font-sans text-slate-900 dark:text-slate-100 overflow-hidden transition-colors duration-200">
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="sidebarBackdrop"
+        class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"
+        onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar"
+        class="bg-white dark:bg-slate-900 w-72 h-full border-r border-slate-200 dark:border-slate-800 flex flex-col fixed lg:static z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 shadow-2xl lg:shadow-none">
+
+        <!-- App Identity -->
+        <div class="h-16 flex items-center px-6 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center space-x-3 gap-2 cursor-pointer" onclick="window.location.href='index.html'">
+                <div class="bg-blue-600 p-1.5 rounded-xl">
+                    <i data-lucide="map-pin" class="text-white w-5 h-5"></i>
+                </div>
+                <span class="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">CivicConnect</span>
+            </div>
+            <!-- Mobile Close Button -->
+            <button class="lg:hidden ml-auto text-slate-500 dark:text-slate-400" onclick="toggleSidebar()">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="flex-1 overflow-y-auto py-4 flex flex-col gap-1 px-3">
+            <h3 class="px-3 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Main
+                Menu</h3>
+
+            <a href="dashboard.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="home"
+                    class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400"></i>
+                <span>Home</span>
+            </a>
+
+            <a href="my-reports.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 group transition-all">
+                <i data-lucide="file-text"
+                    class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400"></i>
+                <span>My Reports</span>
+            </a>
+
+            <div class="pt-6 pb-2">
+                <h3 class="px-3 text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                    Support & Info</h3>
+            </div>
+
+            <a href="#"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 group transition-all"
+                onclick="document.getElementById('aboutModal').classList.remove('hidden')">
+                <i data-lucide="info"
+                    class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400"></i>
+                <span>About</span>
+            </a>
+
+            <a href="#"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 group transition-all"
+                onclick="document.getElementById('contactModal').classList.remove('hidden')">
+                <i data-lucide="phone"
+                    class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400"></i>
+                <span>Contact Us</span>
+            </a>
+        </div>
+
+        <!-- Bottom Account Nav -->
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
+            <a href="profile.html"
+                class="flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 group transition-all">
+                <div class="flex items-center space-x-3">
+                    <i data-lucide="user"
+                        class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400"></i>
+                    <span>Profile</span>
+                </div>
+                <span class="w-2 h-2 rounded-full bg-green-500"></span> <!-- online marker -->
+            </a>
+            <a href="settings.html"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-semibold group transition-all">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+                <span>Settings</span>
+            </a>
+            <a href="#" onclick="handleCitizenLogout(event)"
+                class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-500 dark:text-red-400 font-medium hover:bg-red-50 dark:hover:bg-red-900/20 group transition-all mt-2">
+                <i data-lucide="log-out" class="w-5 h-5 opacity-70 group-hover:opacity-100"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+
+        <!-- User Widget -->
+        <div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shrink-0">
+                    <i data-lucide="user" class="w-5 h-5"></i>
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate" id="userEmailDisplay">
+                        citizen@example.com</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Verified Citizen</p>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- Main Content Area Wrapper -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+
+        <!-- Top Header Panel (Mobile mostly) -->
+        <header
+            class="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 z-30">
+            <div class="flex items-center gap-4">
+                <button
+                    class="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 focus:outline-none lg:hidden -ml-2 p-2"
+                    onclick="toggleSidebar()">
+                    <i data-lucide="menu" class="w-6 h-6"></i>
+                </button>
+                <h2 class="text-xl font-black text-slate-800 dark:text-slate-100 lg:hidden">Settings</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+                    <i data-lucide="bell" class="w-6 h-6"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content (Settings View) -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 w-full block">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                    <div>
+                        <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Settings &
+                            Preferences</h1>
+                        <p class="text-slate-500 dark:text-slate-400 mt-2 text-lg">Manage your app experience and
+                            notifications.</p>
+                    </div>
+                    <button id="saveTopBtn" onclick="simulateSave(this)"
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 flex items-center w-full md:w-auto justify-center">
+                        <i data-lucide="save" class="w-4 h-4 mr-2"></i> Save Changes
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                    <!-- Notifications Card -->
+                    <div
+                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                        <div
+                            class="border-b border-slate-100 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                <i data-lucide="bell-ring" class="w-5 h-5 mr-2 text-slate-400 dark:text-slate-500"></i>
+                                Notifications
+                            </h2>
+                        </div>
+                        <div class="p-6 space-y-6">
+
+                            <!-- Toggle 1 -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-200">Email Alerts</h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">Receive updates when your
+                                        report status changes.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" value="" class="sr-only peer" checked>
+                                    <div
+                                        class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white dark:peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                    </div>
+                                </label>
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-slate-800">
+
+                            <!-- Toggle 2 -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-200">Push Notifications</h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">Get notified instantly on your
+                                        device.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" value="" class="sr-only peer" checked>
+                                    <div
+                                        class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                    </div>
+                                </label>
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-slate-800">
+
+                            <!-- Toggle 3 -->
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-200">SMS Notifications</h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">Get text messages for urgent
+                                        civic alerts in your area.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div
+                                        class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 dark:after:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Preferences Card -->
+                    <div
+                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                        <div
+                            class="border-b border-slate-100 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                <i data-lucide="sliders" class="w-5 h-5 mr-2 text-slate-400 dark:text-slate-500"></i>
+                                App Preferences
+                            </h2>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-200 mb-2">Display Theme</h3>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <button id="themeLightBtn" onclick="setTheme('light')"
+                                        class="border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold py-2 rounded-xl transition-all">Light</button>
+                                    <button id="themeDarkBtn" onclick="setTheme('dark')"
+                                        class="border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-bold py-2 rounded-xl transition-colors">Dark</button>
+                                </div>
+                            </div>
+
+                            <hr class="border-slate-100 dark:border-slate-800">
+
+                            <div>
+                                <h3 class="font-bold text-slate-800 dark:text-slate-200 mb-2">Language</h3>
+                                <select
+                                    class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 dark:text-slate-200 font-medium appearance-none cursor-pointer">
+                                    <option>English (US)</option>
+                                    <option>Spanish (ES)</option>
+                                    <option>French (FR)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Card -->
+                    <div
+                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+                        <div
+                            class="border-b border-slate-100 dark:border-slate-800 p-6 bg-slate-50/50 dark:bg-slate-800/50">
+                            <h2 class="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center">
+                                <i data-lucide="shield" class="w-5 h-5 mr-2 text-slate-400 dark:text-slate-500"></i>
+                                Security
+                            </h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <button onclick="document.getElementById('changePasswordModal').classList.remove('hidden')"
+                                class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors focus:outline-none">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-200">Change Password</h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">Update your account password
+                                        securely.</p>
+                                </div>
+                                <i data-lucide="chevron-right"
+                                    class="w-5 h-5 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400"></i>
+                            </button>
+
+                            <button onclick="document.getElementById('twoFactorModal').classList.remove('hidden')"
+                                class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-between group transition-colors focus:outline-none">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 dark:text-slate-200">Two-Factor Authentication
+                                    </h3>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400">Add an extra layer of security
+                                        to your account.</p>
+                                </div>
+                                <span
+                                    class="text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700">Not
+                                    Configured</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="border border-red-200 rounded-2xl overflow-hidden mt-8">
+                        <div class="bg-red-50 p-6">
+                            <h3 class="text-red-800 font-bold text-lg mb-1">Danger Zone</h3>
+                            <p class="text-red-600 text-sm mb-4">Once you delete your account, there is no going back.
+                                Please be certain.</p>
+                            <button
+                                onclick="confirm('Are you absolutely sure you want to delete your full account and all associated reports?')"
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2.5 rounded-xl font-bold font-sm shadow-md transition-all">
+                                Delete Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal"
+        class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80 z-[100] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <!-- Modal Container -->
+        <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[90vh] overflow-hidden text-slate-800 dark:text-slate-200 font-sans relative"
+            onclick="event.stopPropagation()">
+
+            <!-- Top Header -->
+            <div
+                class="px-6 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                <h2 class="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center">
+                    <i data-lucide="info" class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-500"></i> About CivicConnect
+                </h2>
+                <button onclick="document.getElementById('aboutModal').classList.add('hidden')"
+                    class="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors focus:outline-none z-50">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Scrollable Content -->
+            <div class="p-6 md:p-8 overflow-y-auto space-y-6 flex-1 bg-white dark:bg-slate-900">
+
+                <!-- Main Header / Logo -->
+                <div class="flex flex-col items-center justify-center text-center space-y-4 mb-6 pt-4">
+                    <div
+                        class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-500 p-4 rounded-full shadow-inner border border-blue-100 dark:border-blue-800/50">
+                        <i data-lucide="map-pinned" class="w-12 h-12"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white mb-1">CivicConnect
+                            Web</h1>
+                        <p class="text-slate-500 dark:text-slate-400 font-medium">Empowering Citizens, Improving Cities.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Section 1: Links & Updates -->
+                <div
+                    class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700/50">
+
+                    <!-- Update Status -->
+                    <div class="p-4 flex items-center space-x-4 bg-white dark:bg-slate-800/80">
+                        <div
+                            class="bg-green-100 dark:bg-green-900/30 flex items-center justify-center w-10 h-10 rounded-full shrink-0">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600 dark:text-green-500"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-slate-900 dark:text-slate-200">CivicConnect is up to date
+                            </p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">Version 1.0.4
+                                (Official Build)</p>
+                        </div>
+                    </div>
+
+                    <!-- List Links -->
+                    <a href="#"
+                        class="px-5 py-4 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors group"
+                        onclick="alert('Help center is currently under construction.')">
+                        <span class="text-sm text-slate-700 dark:text-slate-300 font-medium">Get help with
+                            CivicConnect</span>
+                        <i data-lucide="external-link"
+                            class="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                    </a>
+
+                    <a href="report.html"
+                        class="px-5 py-4 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors group">
+                        <span class="text-sm text-slate-700 dark:text-slate-300 font-medium">Report an issue
+                            manually</span>
+                        <i data-lucide="external-link"
+                            class="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                    </a>
+
+                    <a href="#"
+                        class="px-5 py-4 flex items-center justify-between hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors group">
+                        <span class="text-sm text-slate-700 dark:text-slate-300 font-medium">Privacy policy</span>
+                        <i data-lucide="external-link"
+                            class="w-4 h-4 text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                    </a>
+                </div>
+
+                <!-- Section 2: Legal -->
+                <div
+                    class="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-5 space-y-3">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800 dark:text-slate-200">CivicConnect Platform</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Copyright 2026 CivicConnect
+                            OpenSource Project. All
+                            rights reserved.</p>
+                    </div>
+
+                    <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                        CivicConnect is made possible by the <a href="#"
+                            class="text-blue-600 dark:text-blue-400 hover:underline font-medium">Tailwind CSS</a> open
+                        source project and
+                        other <a href="#" class="text-blue-600 dark:text-blue-400 hover:underline font-medium">open
+                            source software</a>.
+                    </p>
+
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <a href="#" class="text-xs text-blue-600 dark:text-blue-400 hover:underline font-bold">Terms of
+                            Service</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- Contact Us Modal -->
+    <div id="contactModal"
+        class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80 z-[100] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <!-- Modal Container -->
+        <div class="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row relative border border-slate-200 dark:border-slate-800"
+            onclick="event.stopPropagation()">
+
+            <!-- Close Button -->
+            <button onclick="document.getElementById('contactModal').classList.add('hidden')"
+                class="absolute top-4 right-4 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 p-2 rounded-full transition-colors focus:outline-none z-50">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Left Side: Contact Information (Blue Gradient) -->
+            <div
+                class="bg-gradient-to-br from-blue-600 to-blue-800 dark:from-blue-800 dark:to-slate-900 p-8 md:p-10 text-white md:w-2/5 flex flex-col justify-between relative overflow-hidden">
+                <!-- Decorative Circles -->
+                <div
+                    class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500 dark:bg-blue-600 rounded-full opacity-20 blur-2xl">
+                </div>
+                <div
+                    class="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-400 dark:bg-blue-500 rounded-full opacity-20 blur-2xl">
+                </div>
+
+                <div class="relative z-10">
+                    <h2 class="text-3xl font-black mb-2 tracking-tight">Get in Touch</h2>
+                    <p class="text-blue-100 dark:text-slate-300 mb-8 font-medium">We're here to help and answer any
+                        question you might have.
+                    </p>
+
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4">
+                            <i data-lucide="map-pin"
+                                class="w-6 h-6 text-blue-300 dark:text-blue-400 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">CivicConnect HQ</h4>
+                                <p class="text-blue-100 dark:text-slate-300 text-sm mt-1">123 Civic Center
+                                    Drive<br>Metro City, MT 12345</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-4">
+                            <i data-lucide="phone" class="w-6 h-6 text-blue-300 dark:text-blue-400 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">Phone</h4>
+                                <p class="text-blue-100 dark:text-slate-300 text-sm mt-1">1-800-CIVIC-GOV<br><span
+                                        class="opacity-75">Mon-Fri 8am - 6pm</span></p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-4">
+                            <i data-lucide="mail" class="w-6 h-6 text-blue-300 dark:text-blue-400 shrink-0 mt-0.5"></i>
+                            <div>
+                                <h4 class="font-bold text-lg leading-tight">Email Support</h4>
+                                <p class="text-blue-100 dark:text-slate-300 text-sm mt-1">
+                                    support@civicconnect.org<br><span class="opacity-75">24/7 Response Guaranteed</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Contact Form -->
+            <div class="p-8 md:p-10 md:w-3/5 bg-white dark:bg-slate-900 relative z-10">
+                <h3 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-6">Send us a Message</h3>
+
+                <form class="space-y-5"
+                    onsubmit="event.preventDefault(); alert('Message Sent! A representative will contact you shortly.'); document.getElementById('contactModal').classList.add('hidden');">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">First Name</label>
+                            <input type="text" required placeholder="Jane"
+                                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Last Name</label>
+                            <input type="text" required placeholder="Doe"
+                                class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Email Address</label>
+                        <input type="email" required placeholder="jane.doe@example.com"
+                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow">
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Subject /
+                            Category</label>
+                        <select
+                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow appearance-none cursor-pointer">
+                            <option>General Inquiry</option>
+                            <option>Technical Support</option>
+                            <option>Report an Urgent Issue</option>
+                            <option>Feedback & Suggestions</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Your Message</label>
+                        <textarea rows="4" required placeholder="How can we help you today?"
+                            class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow resize-none"></textarea>
+                    </div>
+
+                    <button type="submit"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-500/30 transition-all hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                        <span>Send Message</span>
+                        <i data-lucide="send" class="w-4 h-4 ml-1"></i>
+                    </button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="changePasswordModal"
+        class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80 z-[120] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative border border-slate-200 dark:border-slate-800"
+            onclick="event.stopPropagation()">
+            <div
+                class="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+                    <i data-lucide="key" class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-500"></i> Change Password
+                </h3>
+                <button onclick="document.getElementById('changePasswordModal').classList.add('hidden')"
+                    class="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-full transition-colors focus:outline-none border border-slate-200 dark:border-slate-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form onsubmit="updatePassword(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">New
+                            Password</label>
+                        <input type="password" id="newPassword" required
+                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">Confirm New
+                            Password</label>
+                        <input type="password" id="confirmPassword" required
+                            class="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    </div>
+                    <div id="passwordErrorMsg" class="text-red-500 text-sm font-medium hidden">Passwords do not match.
+                    </div>
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" id="updatePasswordBtn"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-md shadow-blue-500/30 flex items-center transition-all w-full justify-center">
+                            Update Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two-Factor Authentication Modal -->
+    <div id="twoFactorModal"
+        class="fixed inset-0 bg-slate-900/50 dark:bg-slate-900/80 z-[120] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden relative border border-slate-200 dark:border-slate-800"
+            onclick="event.stopPropagation()">
+            <div
+                class="flex justify-between items-center p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center">
+                    <i data-lucide="smartphone" class="w-5 h-5 mr-2 text-blue-600 dark:text-blue-500"></i> Two-Factor
+                    Auth
+                </h3>
+                <button onclick="document.getElementById('twoFactorModal').classList.add('hidden')"
+                    class="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 p-2 rounded-full transition-colors focus:outline-none border border-slate-200 dark:border-slate-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 text-center space-y-4">
+                <div
+                    class="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="shield-check" class="w-8 h-8"></i>
+                </div>
+                <h4 class="text-lg font-bold text-slate-900 dark:text-slate-100">Enhance Your Security</h4>
+                <p class="text-slate-500 dark:text-slate-400 text-sm">Two-Factor Authentication adds an extra layer of
+                    security. We will text you a code when logging in from a new device.</p>
+                <div class="pt-4">
+                    <button
+                        onclick="document.getElementById('twoFactorModal').classList.add('hidden'); alert('2FA feature coming soon!');"
+                        class="bg-slate-900 dark:bg-white hover:bg-slate-800 dark:hover:bg-slate-100 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-bold shadow-md flex items-center transition-all w-full justify-center">
+                        Set up 2FA
+                    </button>
+                    <button onclick="document.getElementById('twoFactorModal').classList.add('hidden')"
+                        class="mt-3 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 font-medium text-sm w-full text-center">
+                        Maybe Later
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Initialization Scripts -->
+    <script>
+        // Initialize Supabase Client
+        const _supabaseUrl = 'https://lospwkmfoutyhfjlxqll.supabase.co';
+        const _supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxvc3B3a21mb3V0eWhmamx4cWxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0MzgzMDAsImV4cCI6MjA4NzAxNDMwMH0.cdmBXofteICV2dRD2W-p06t6PPxbZebecipQyf7qyF8';
+        const supabaseClient = window.supabase.createClient(_supabaseUrl, _supabaseKey);
+
+        lucide.createIcons();
+
+        function saveSettings() {
+            const btn = document.getElementById('saveSettingsBtn');
+            const originalHTML = btn.innerHTML;
+
+            btn.innerHTML = '<i class="lucide lucide-loader animate-spin w-4 h-4 mr-2"></i> Saving...';
+            btn.disabled = true;
+
+            lucide.createIcons();
+
+            setTimeout(() => {
+                btn.innerHTML = '<i class="lucide lucide-check w-4 h-4 mr-2"></i> Saved';
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+
+                lucide.createIcons();
+
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    btn.disabled = false;
+                    lucide.createIcons();
+                }, 2000);
+            }, 800);
+        }
+
+        // --- Theme Toggle Logic ---
+        function setTheme(theme) {
+            const htmlClassList = document.documentElement.classList;
+            const btnLight = document.getElementById('themeLightBtn');
+            const btnDark = document.getElementById('themeDarkBtn');
+
+            if (theme === 'dark') {
+                htmlClassList.add('dark');
+                localStorage.setItem('civic_theme', 'dark');
+
+                // Style Active Button
+                if (btnDark) btnDark.className = "border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold py-2 rounded-xl transition-all";
+                if (btnLight) btnLight.className = "border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold py-2 rounded-xl transition-colors";
+            } else {
+                htmlClassList.remove('dark');
+                localStorage.setItem('civic_theme', 'light');
+
+                // Style Active Button
+                if (btnLight) btnLight.className = "border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold py-2 rounded-xl transition-all";
+                if (btnDark) btnDark.className = "border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold py-2 rounded-xl transition-colors";
+            }
+        }
+
+        async function updatePassword(event) {
+            event.preventDefault();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const errorMsg = document.getElementById('passwordErrorMsg');
+            const btn = document.getElementById('updatePasswordBtn');
+
+            if (newPassword !== confirmPassword) {
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Updating... <i class="lucide lucide-loader transform animate-spin ml-2"></i>';
+            btn.disabled = true;
+
+            try {
+                const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+                if (error) throw error;
+
+                alert("Password updated successfully!");
+                document.getElementById('changePasswordModal').classList.add('hidden');
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch (err) {
+                console.error("Error updating password:", err);
+                alert("Failed to update password: " + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        // Bind LocalStorage Data to the UI on load
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedEmail = localStorage.getItem('civic_email');
+            if (savedEmail) {
+                document.getElementById('userEmailDisplay').innerText = savedEmail;
+            }
+
+            // Restore Theme Display
+            const currentTheme = localStorage.getItem('civic_theme') || 'light';
+            setTheme(currentTheme);
+        });
+
+        // Mobile Sidebar Toggle
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+    </script>
+    <script>
+        function handleCitizenLogout(e) {
+            e.preventDefault();
+            localStorage.removeItem('civic_email');
+            localStorage.removeItem('civic_password');
+            if (window.supabase && typeof supabaseClient !== 'undefined') {
+                supabaseClient.auth.signOut().catch(() => { });
+            }
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+
+</html>

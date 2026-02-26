@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CivicConnect - Empowering Citizens</title>
+    <!-- Tailwind CSS via CDN for rapid styling mapping -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <!-- Include Lucide Icons script -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen bg-slate-50 flex flex-col transition-colors duration-200">
+    <script>
+        // Apply theme immediately on load to prevent flash
+        if (localStorage.getItem('civic_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+
+
+    <!-- Navbar -->
+    <nav class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3 gap-2">
+                    <div class="bg-blue-600 p-2 rounded-xl">
+                        <i data-lucide="map-pin" class="text-white w-6 h-6"></i>
+                    </div>
+                    <span class="text-2xl font-black text-slate-900 tracking-tight">CivicConnect</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="login.html"
+                        class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Login</a>
+                    <a href="signup.html"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full font-bold transition-all shadow-md hover:shadow-lg">Sign
+                        Up</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4">
+        <div
+            class="max-w-4xl w-full text-center space-y-8 animate-in slide-in-from-bottom flex flex-col items-center py-20">
+            <div
+                class="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full font-semibold text-sm mb-4">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                <span>Report issues, improve your city</span>
+            </div>
+
+            <h1 class="text-5xl md:text-7xl font-black text-slate-900 tracking-tight leading-tight">
+                Empowering Citizens to <br />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Fix Their Communities
+                </span>
+            </h1>
+
+            <p class="text-xl md:text-2xl text-slate-500 max-w-2xl mx-auto leading-relaxed">
+                A transparent, efficient platform to report civic issues directly to your local municipal authorities.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8 w-full max-w-md mx-auto">
+                <a href="login.html"
+                    class="w-full sm:w-auto flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full font-bold text-lg shadow-xl shadow-blue-200 transition-all hover:scale-105">
+                    <i data-lucide="map-pin"></i>
+                    <span>Report an Issue</span>
+                </a>
+            </div>
+
+            <!-- Stats/Features -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20 text-left pt-12 border-t border-slate-200 w-full">
+                <!-- Stat 1 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col text-center">
+                    <div
+                        class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 mx-auto text-blue-600">
+                        <i data-lucide="map-pin"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Location Based</h3>
+                    <p class="text-slate-500">Pinpoint exact issues using interactive maps for pinpoint accuracy.</p>
+                </div>
+
+                <!-- Stat 2 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col text-center">
+                    <div
+                        class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 mx-auto text-green-600">
+                        <i data-lucide="shield"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Verified Authorities</h3>
+                    <p class="text-slate-500">Issues flow directly to official verified municipal dashboards.</p>
+                </div>
+
+                <!-- Stat 3 -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col text-center">
+                    <div
+                        class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 mx-auto text-purple-600">
+                        <i data-lucide="activity"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Live Tracking</h3>
+                    <p class="text-slate-500">Track resolution status from pending to resolved in real-time.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
