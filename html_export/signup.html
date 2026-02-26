@@ -227,7 +227,7 @@
         let generatedOTP = null;
         let isEmailVerified = false;
         const SERVICE_ID = "service_5j0ex6q";
-        const TEMPLATE_ID = "template_4v57xfb";
+        const TEMPLATE_ID = "template_8c4o63a"; // Updated based on dashboard screenshot
 
         async function sendOTP() {
             const email = document.getElementById('signupEmail').value;
@@ -252,15 +252,16 @@
                     otp_code: generatedOTP,
                     otp: generatedOTP,
                     user_otp: generatedOTP,
+                    OTP: generatedOTP,
                     verification_code: generatedOTP,
                     code: generatedOTP,
                     time: expirationTime
                 };
                 console.log("------------------------------------------");
                 console.log("Sending EmailJS OTP request:");
-                console.log("To:", email);
+                console.log("Service ID:", SERVICE_ID);
+                console.log("Template ID:", TEMPLATE_ID);
                 console.log("OTP Value:", generatedOTP);
-                console.log("Expires At:", expirationTime);
                 console.log("Full Params:", templateParams);
                 console.log("------------------------------------------");
 
