@@ -227,11 +227,16 @@
             console.log("Generated OTP:", generatedOTP); // For debugging purposes
 
             try {
-                // EmailJS Send
-                await emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+                // EmailJS Send with multiple aliases for easier template setup
+                const templateParams = {
                     to_email: email,
-                    otp_code: generatedOTP
-                });
+                    otp_code: generatedOTP,
+                    otp: generatedOTP,
+                    code: generatedOTP
+                };
+                console.log("Sending EmailJS params:", templateParams);
+
+                await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
 
                 document.getElementById('otpInputGroup').classList.remove('hidden');
                 document.getElementById('btnVerifyEmail').innerText = "Resend";
