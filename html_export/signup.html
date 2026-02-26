@@ -222,9 +222,10 @@
             btn.innerText = "Sending...";
             btn.disabled = true;
 
-            // Generate 6 digit OTP
+            // Generate 6 digit OTP and expiration time
             generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            console.log("Generated OTP:", generatedOTP); // For debugging purposes
+            const expirationTime = new Date(Date.now() + 15 * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            console.log("Generated OTP:", generatedOTP, "Expires at:", expirationTime);
 
             try {
                 // EmailJS Send with multiple aliases for easier template setup
@@ -232,7 +233,8 @@
                     to_email: email,
                     otp_code: generatedOTP,
                     otp: generatedOTP,
-                    code: generatedOTP
+                    code: generatedOTP,
+                    time: expirationTime
                 };
                 console.log("Sending EmailJS params:", templateParams);
 
