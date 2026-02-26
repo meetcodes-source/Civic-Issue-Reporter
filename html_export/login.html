@@ -10,6 +10,24 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50: '#e0e9f6',
+                            100: '#b3c7e8',
+                            200: '#80a1d8',
+                            300: '#4d7cc8',
+                            400: '#265fb9',
+                            500: '#0047AB',
+                            600: '#00409a',
+                            700: '#003789',
+                            800: '#002f78',
+                            900: '#00215c',
+                        }
+                    }
+                }
+            }
         }
     </script>
 
@@ -180,10 +198,15 @@
             if (!authError && authData.user) {
                 authSuccess = true;
                 // Fetch role from DB to ensure RBAC
-                const { data: authDbUser } = await supabaseClient.from('users').select('role').eq('email', email).maybeSingle();
-                if (authDbUser && authDbUser.role) {
-                    userRole = authDbUser.role;
-                    localStorage.setItem('civic_role', userRole);
+                const { data: authDbUser } = await supabaseClient.from('users').select('role, full_name').eq('email', email).maybeSingle();
+                if (authDbUser) {
+                    if (authDbUser.role) {
+                        userRole = authDbUser.role;
+                        localStorage.setItem('civic_role', userRole);
+                    }
+                    if (authDbUser.full_name) {
+                        localStorage.setItem('civic_full_name', authDbUser.full_name);
+                    }
                 }
             } else {
                 console.warn("Supabase Auth failed (possibly unconfirmed email). Falling back to public.users table...", authError);
@@ -202,6 +225,7 @@
                     // Mock session persistence so other pages work
                     localStorage.setItem('civic_email', email);
                     localStorage.setItem('civic_password', password);
+                    if (dbUser.full_name) localStorage.setItem('civic_full_name', dbUser.full_name);
                     if (userRole) localStorage.setItem('civic_role', userRole);
                 } else {
                     // 3. Last resort fallback to local storage (for legacy mock flows if DB is wiped)

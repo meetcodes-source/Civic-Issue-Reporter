@@ -10,6 +10,24 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50: '#e0e9f6',
+                            100: '#b3c7e8',
+                            200: '#80a1d8',
+                            300: '#4d7cc8',
+                            400: '#265fb9',
+                            500: '#0047AB',
+                            600: '#00409a',
+                            700: '#003789',
+                            800: '#002f78',
+                            900: '#00215c',
+                        }
+                    }
+                }
+            }
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -167,9 +185,10 @@
 
                 <!-- Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div
-                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
-                        <div class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+                    <div onclick="openStatsModal('platform')"
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center space-x-4 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group">
+                        <div
+                            class="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
                             <i data-lucide="file-text" class="w-6 h-6"></i>
                         </div>
                         <div>
@@ -178,22 +197,22 @@
                             <p id="statTotal" class="text-2xl font-black text-slate-900 dark:text-slate-100">-</p>
                         </div>
                     </div>
-                    <div
-                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
+                    <div onclick="openStatsModal('progress')"
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center space-x-4 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group">
                         <div
-                            class="p-3 bg-yellow-100 dark:bg-amber-900/30 text-yellow-600 dark:text-amber-400 rounded-xl">
+                            class="p-3 bg-yellow-100 dark:bg-amber-900/30 text-yellow-600 dark:text-amber-400 rounded-xl group-hover:bg-amber-600 group-hover:text-white transition-colors">
                             <i data-lucide="clock" class="w-6 h-6"></i>
                         </div>
                         <div>
                             <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-                                Pending Fixing</p>
+                                In Progress</p>
                             <p id="statPending" class="text-2xl font-black text-slate-900 dark:text-slate-100">-</p>
                         </div>
                     </div>
-                    <div
-                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center space-x-4">
+                    <div onclick="openStatsModal('resolved')"
+                        class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center space-x-4 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all group">
                         <div
-                            class="p-3 bg-green-100 dark:bg-emerald-900/30 text-green-600 dark:text-emerald-400 rounded-xl">
+                            class="p-3 bg-green-100 dark:bg-emerald-900/30 text-green-600 dark:text-emerald-400 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors">
                             <i data-lucide="check-circle" class="w-6 h-6"></i>
                         </div>
                         <div>
@@ -520,6 +539,26 @@
                                 id="modalReportDate">...</span></span>
                     </div>
 
+                    <!-- Reporter Info -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                            Reporter</h3>
+                        <div
+                            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+                            <div id="modalReporterInitials"
+                                class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold shrink-0">
+                                ?
+                            </div>
+                            <div class="overflow-hidden">
+                                <p id="modalReporterName"
+                                    class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm">Loading...
+                                </p>
+                                <p id="modalReporterEmail" class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                    ...</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Map and Location -->
                     <div
                         class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col isolate">
@@ -648,9 +687,42 @@
             const report = allReports.find(r => r.id === reportId);
             if (!report) return;
 
-            document.getElementById('modalReportId').innerText = report.report_id || report.id.substring(0, 8);
+            document.getElementById('modalReportId').innerText = report.report_id || String(report.id).substring(0, 8);
             const dt = new Date(report.created_at);
             document.getElementById('modalReportDate').innerText = dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            // Reporter Data Logic
+            const reporterEmail = report.user_email || 'anonymous@citizen.org';
+            const currentUserEmail = localStorage.getItem('civic_email');
+            const currentUserName = localStorage.getItem('civic_full_name');
+
+            document.getElementById('modalReporterEmail').innerText = reporterEmail;
+            document.getElementById('modalReporterName').innerText = 'Loading...';
+            document.getElementById('modalReporterInitials').innerText = '?';
+
+            if (reporterEmail === currentUserEmail && currentUserName) {
+                // If it's the current user, use localStorage data immediately
+                document.getElementById('modalReporterName').innerText = currentUserName + " (You)";
+                const initials = currentUserName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('modalReporterInitials').innerText = initials;
+            } else {
+                // Fetch from database for other users
+                supabaseClient
+                    .from('users')
+                    .select('full_name')
+                    .eq('email', reporterEmail)
+                    .maybeSingle()
+                    .then(({ data: userData }) => {
+                        if (userData && userData.full_name) {
+                            document.getElementById('modalReporterName').innerText = userData.full_name;
+                            const initials = userData.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                            document.getElementById('modalReporterInitials').innerText = initials;
+                        } else {
+                            document.getElementById('modalReporterName').innerText = reporterEmail.split('@')[0];
+                            document.getElementById('modalReporterInitials').innerText = reporterEmail[0].toUpperCase();
+                        }
+                    });
+            }
 
             const catBadge = document.getElementById('modalReportCategory');
             document.getElementById('modalCategoryText').innerText = report.category;
@@ -729,6 +801,73 @@
 
         function closeReportModal() {
             document.getElementById('reportModal').classList.add('hidden');
+        }
+
+        // Stats Modal Logic
+        function openStatsModal(filterType) {
+            const modal = document.getElementById('statsModal');
+            const list = document.getElementById('statsModalList');
+            const title = document.getElementById('statsModalTitle');
+            const iconContainer = document.getElementById('statsModalIcon');
+            const subText = document.getElementById('statsModalSub');
+
+            let filtered = [];
+            let icon = 'file-text';
+            let colorClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+
+            if (filterType === 'platform') {
+                filtered = allReports;
+                title.innerText = 'Platform Reports';
+                subText.innerText = 'Viewing all submitted civic reports';
+                icon = 'file-text';
+                colorClass = 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+            } else if (filterType === 'progress') {
+                filtered = allReports.filter(r => (r.status || 'Pending').toLowerCase().includes('progress') || (r.status || 'Pending').toLowerCase().includes('fixing'));
+                title.innerText = 'In Progress Issues';
+                subText.innerText = 'Issues currently being addressed by authorities';
+                icon = 'clock';
+                colorClass = 'bg-yellow-100 text-yellow-600 dark:bg-amber-900/30 dark:text-amber-400';
+            } else if (filterType === 'resolved') {
+                filtered = allReports.filter(r => (r.status || '').toLowerCase().includes('resolved') || (r.status || '').toLowerCase().includes('completed'));
+                title.innerText = 'Resolved Issues';
+                subText.innerText = 'Issues successfully completed and closed';
+                icon = 'check-circle';
+                colorClass = 'bg-green-100 text-green-600 dark:bg-emerald-900/30 dark:text-emerald-400';
+            }
+
+            // Update Header
+            iconContainer.className = `p-3 rounded-2xl ${colorClass}`;
+            iconContainer.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8"></i>`;
+
+            // Render List
+            if (filtered.length === 0) {
+                list.innerHTML = `<div class="p-12 text-center text-slate-500 font-medium">No reports found for this category.</div>`;
+            } else {
+                list.innerHTML = filtered.map(r => {
+                    const status = (r.status || 'Pending');
+                    const date = new Date(r.created_at).toLocaleDateString();
+                    return `
+                        <div onclick="openReportModal('${r.id}'); document.getElementById('statsModal').classList.add('hidden');" class="p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer flex items-center justify-between group">
+                            <div class="flex items-center gap-4">
+                                <div class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                                    ${r.image_url ? `<img src="${r.image_url}" class="w-full h-full object-cover">` : `<i data-lucide="image" class="w-5 h-5 text-slate-400"></i>`}
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">${r.category}: ${r.description.substring(0, 40)}${r.description.length > 40 ? '...' : ''}</h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 italic">${r.full_address || 'No location'}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs font-bold text-slate-400 dark:text-slate-500">${date}</div>
+                                <div class="text-[10px] font-black uppercase text-blue-500 mt-1">#${r.report_id || r.id.substring(0, 8)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            lucide.createIcons();
+            modal.classList.remove('hidden');
         }
 
         // Handles injecting the HTML based on a given array
@@ -838,6 +977,51 @@
             window.location.href = 'index.html';
         }
     </script>
+    <!-- Stats Filtering Modal -->
+    <div id="statsModal"
+        class="fixed inset-0 bg-slate-900/60 dark:bg-slate-900/80 z-[150] hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm transition-all duration-300">
+        <div class="bg-white dark:bg-slate-950 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col relative border border-slate-200 dark:border-slate-800"
+            onclick="event.stopPropagation()">
+
+            <!-- Close Button -->
+            <button onclick="document.getElementById('statsModal').classList.add('hidden')"
+                class="absolute top-4 right-4 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 p-2 rounded-full transition-colors focus:outline-none z-50">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Modal Header -->
+            <div class="p-6 md:p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                <div class="flex items-center gap-4">
+                    <div id="statsModalIcon"
+                        class="p-3 rounded-2xl bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                        <i data-lucide="file-text" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h2 id="statsModalTitle"
+                            class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Platform Reports
+                        </h2>
+                        <p id="statsModalSub" class="text-slate-500 dark:text-slate-400 font-medium">Viewing all
+                            submitted civic reports</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Body (Scrollable List) -->
+            <div id="statsModalList"
+                class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 max-h-[60vh]">
+                <!-- Filtered reports will be injected here -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div
+                class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-end">
+                <button onclick="document.getElementById('statsModal').classList.add('hidden')"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl shadow-lg transition-all active:scale-95">
+                    Close View
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

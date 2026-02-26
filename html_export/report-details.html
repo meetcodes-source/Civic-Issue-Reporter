@@ -10,6 +10,24 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50: '#e0e9f6',
+                            100: '#b3c7e8',
+                            200: '#80a1d8',
+                            300: '#4d7cc8',
+                            400: '#265fb9',
+                            500: '#0047AB',
+                            600: '#00409a',
+                            700: '#003789',
+                            800: '#002f78',
+                            900: '#00215c',
+                        }
+                    }
+                }
+            }
         }
     </script>
 
@@ -229,6 +247,21 @@
                                 </div>
                                 <p class="text-xs text-slate-500 mt-4 text-left w-full">Submitted on <span
                                         id="reportDate" class="font-bold text-slate-700">...</span></p>
+                            </div>
+
+                            <!-- Reporter Card -->
+                            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Reporter</h3>
+                                <div class="flex items-center space-x-4">
+                                    <div id="reporterInitials"
+                                        class="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-lg border border-blue-100 shrink-0">
+                                        ?
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <p id="reporterName" class="font-bold text-slate-900 truncate">Loading...</p>
+                                        <p id="reporterEmail" class="text-sm text-slate-500 truncate">...</p>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Location Card -->
@@ -505,6 +538,37 @@
             // Date
             const dt = new Date(report.created_at);
             document.getElementById('reportDate').innerText = dt.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            // Reporter Logic
+            const reporterEmail = report.user_email || 'anonymous@citizen.org';
+            const currentUserEmail = localStorage.getItem('civic_email');
+            const currentUserName = localStorage.getItem('civic_full_name');
+
+            document.getElementById('reporterEmail').innerText = reporterEmail;
+            document.getElementById('reporterName').innerText = 'Loading...';
+            document.getElementById('reporterInitials').innerText = '?';
+
+            if (reporterEmail === currentUserEmail && currentUserName) {
+                document.getElementById('reporterName').innerText = currentUserName + " (You)";
+                const initials = currentUserName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                document.getElementById('reporterInitials').innerText = initials;
+            } else {
+                supabaseClient
+                    .from('users')
+                    .select('full_name')
+                    .eq('email', reporterEmail)
+                    .maybeSingle()
+                    .then(({ data: userData }) => {
+                        if (userData && userData.full_name) {
+                            document.getElementById('reporterName').innerText = userData.full_name;
+                            const initials = userData.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                            document.getElementById('reporterInitials').innerText = initials;
+                        } else {
+                            document.getElementById('reporterName').innerText = reporterEmail.split('@')[0];
+                            document.getElementById('reporterInitials').innerText = reporterEmail[0].toUpperCase();
+                        }
+                    });
+            }
 
             // Category Badge
             const catBadge = document.getElementById('reportCategoryBadge');

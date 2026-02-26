@@ -10,6 +10,24 @@
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        blue: {
+                            50: '#e0e9f6',
+                            100: '#b3c7e8',
+                            200: '#80a1d8',
+                            300: '#4d7cc8',
+                            400: '#265fb9',
+                            500: '#0047AB',
+                            600: '#00409a',
+                            700: '#003789',
+                            800: '#002f78',
+                            900: '#00215c',
+                        }
+                    }
+                }
+            }
         }
     </script>
 
@@ -163,6 +181,19 @@
                         <i data-lucide="plus" class="w-4 h-4"></i>
                         <span>New Report</span>
                     </a>
+                </div>
+
+                <!-- Filter Tabs -->
+                <div
+                    class="flex items-center space-x-1 mb-6 bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-2xl w-fit">
+                    <button onclick="switchTab('reports')" id="tabReports"
+                        class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-slate-700">
+                        Reports
+                    </button>
+                    <button onclick="switchTab('resolved')" id="tabResolved"
+                        class="px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50">
+                        Resolved
+                    </button>
                 </div>
 
                 <!-- Search Bar -->
@@ -481,6 +512,26 @@
                                 class="w-3.5 h-3.5 mr-1 pt-0.5"></i> <span id="modalReportDate">...</span></span>
                     </div>
 
+                    <!-- Reporter Info -->
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                            Reporter</h3>
+                        <div
+                            class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-sm flex items-center gap-3">
+                            <div id="modalReporterInitials"
+                                class="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold shrink-0">
+                                ?
+                            </div>
+                            <div class="overflow-hidden">
+                                <p id="modalReporterName"
+                                    class="font-bold text-slate-900 dark:text-slate-100 truncate text-sm">Loading...
+                                </p>
+                                <p id="modalReporterEmail" class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                    ...</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Map and Location -->
                     <div
                         class="bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-2xl shadow-sm overflow-hidden flex flex-col isolate">
@@ -605,9 +656,26 @@
 
             // Global state for client-side filtering
             let allMyReports = [];
+            let currentTab = 'reports'; // 'reports' or 'resolved'
             let submittedFeedbackIds = new Set();
             let currentFeedbackRating = 0;
             let activeFeedbackReport = null;
+
+            function switchTab(tab) {
+                currentTab = tab;
+                const btnReports = document.getElementById('tabReports');
+                const btnResolved = document.getElementById('tabResolved');
+
+                if (tab === 'reports') {
+                    btnReports.className = "px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-slate-700";
+                    btnResolved.className = "px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50";
+                } else {
+                    btnResolved.className = "px-6 py-2.5 rounded-xl font-bold text-sm transition-all bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-slate-700";
+                    btnReports.className = "px-6 py-2.5 rounded-xl font-bold text-sm transition-all text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/50 dark:hover:bg-slate-800/50";
+                }
+
+                filterReports();
+            }
 
             // Load Live Reports from Database (Filtered by User)
             async function loadDynamicReports(userEmail) {
@@ -647,17 +715,25 @@
             // Triggered by oninput in the search bar
             function filterReports() {
                 const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-                if (!searchTerm) {
-                    renderReports(allMyReports);
-                    return;
-                }
-                // Filter by ID, Category/Type, or Location
-                const filtered = allMyReports.filter(r => {
-                    const matchId = r.report_id && r.report_id.toLowerCase().includes(searchTerm);
-                    const matchCategory = r.category && r.category.toLowerCase().includes(searchTerm);
-                    const matchLocation = r.full_address && r.full_address.toLowerCase().includes(searchTerm);
-                    return matchId || matchCategory || matchLocation;
+
+                // First filter by tab
+                let filtered = allMyReports.filter(r => {
+                    const status = (r.status || 'Pending').toLowerCase();
+                    const isResolved = status.includes('resolved') || status.includes('completed');
+                    if (currentTab === 'reports') return !isResolved;
+                    return isResolved;
                 });
+
+                // Then filter by search term
+                if (searchTerm) {
+                    filtered = filtered.filter(r => {
+                        const matchId = r.report_id && r.report_id.toLowerCase().includes(searchTerm);
+                        const matchCategory = r.category && r.category.toLowerCase().includes(searchTerm);
+                        const matchLocation = r.full_address && r.full_address.toLowerCase().includes(searchTerm);
+                        return matchId || matchCategory || matchLocation;
+                    });
+                }
+
                 renderReports(filtered);
             }
 
@@ -666,9 +742,40 @@
                 const report = allMyReports.find(r => r.id === reportId);
                 if (!report) return;
 
-                document.getElementById('modalReportId').innerText = report.report_id || report.id.substring(0, 8);
+                document.getElementById('modalReportId').innerText = report.report_id || String(report.id).substring(0, 8);
                 const dt = new Date(report.created_at);
                 document.getElementById('modalReportDate').innerText = dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                // Reporter Data Logic
+                const reporterEmail = report.user_email || 'anonymous@citizen.org';
+                const currentUserEmail = localStorage.getItem('civic_email');
+                const currentUserName = localStorage.getItem('civic_full_name');
+
+                document.getElementById('modalReporterEmail').innerText = reporterEmail;
+                document.getElementById('modalReporterName').innerText = 'Loading...';
+                document.getElementById('modalReporterInitials').innerText = '?';
+
+                if (reporterEmail === currentUserEmail && currentUserName) {
+                    document.getElementById('modalReporterName').innerText = currentUserName + " (You)";
+                    const initials = currentUserName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                    document.getElementById('modalReporterInitials').innerText = initials;
+                } else {
+                    supabaseClient
+                        .from('users')
+                        .select('full_name')
+                        .eq('email', reporterEmail)
+                        .maybeSingle()
+                        .then(({ data: userData }) => {
+                            if (userData && userData.full_name) {
+                                document.getElementById('modalReporterName').innerText = userData.full_name;
+                                const initials = userData.full_name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                                document.getElementById('modalReporterInitials').innerText = initials;
+                            } else {
+                                document.getElementById('modalReporterName').innerText = reporterEmail.split('@')[0];
+                                document.getElementById('modalReporterInitials').innerText = reporterEmail[0].toUpperCase();
+                            }
+                        });
+                }
 
                 const catBadge = document.getElementById('modalReportCategory');
                 document.getElementById('modalCategoryText').innerText = report.category;
