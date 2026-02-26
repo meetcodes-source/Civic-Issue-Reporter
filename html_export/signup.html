@@ -251,10 +251,18 @@
                     to_email: email,
                     otp_code: generatedOTP,
                     otp: generatedOTP,
+                    user_otp: generatedOTP,
+                    verification_code: generatedOTP,
                     code: generatedOTP,
                     time: expirationTime
                 };
-                console.log("Sending EmailJS params:", templateParams);
+                console.log("------------------------------------------");
+                console.log("Sending EmailJS OTP request:");
+                console.log("To:", email);
+                console.log("OTP Value:", generatedOTP);
+                console.log("Expires At:", expirationTime);
+                console.log("Full Params:", templateParams);
+                console.log("------------------------------------------");
 
                 await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams);
 
