@@ -268,7 +268,7 @@
                 document.getElementById('otpInputGroup').classList.remove('hidden');
                 document.getElementById('btnVerifyEmail').innerText = "Resend";
                 document.getElementById('btnVerifyEmail').disabled = false;
-                alert("OTP Prepared! \n\nSending code: " + generatedOTP + "\n\nIf the email arrives blank, please change the tag in your EmailJS template to {{verification_code}}");
+                alert("OTP sent! Please check your email.");
             } catch (err) {
                 console.error("EmailJS Error:", err);
                 const errorDetail = err.text || err.message || JSON.stringify(err);
