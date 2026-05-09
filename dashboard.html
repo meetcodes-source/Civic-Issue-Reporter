@@ -257,6 +257,29 @@
                     </a>
                 </div>
 
+                <!-- Geofence Alert Banner (Hidden by default) -->
+                <div id="geofenceBanner" class="hidden bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 p-4 rounded-r-xl shadow-sm relative overflow-hidden transition-all duration-500 transform origin-top translate-y-[-10px] opacity-0">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 mt-0.5">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500 animate-pulse"></i>
+                        </div>
+                        <div class="ml-3 w-full flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h3 class="text-sm font-bold text-red-800 dark:text-red-400 uppercase tracking-wider">Civic Hotspot Detected</h3>
+                                <p class="mt-1 text-sm text-red-700 dark:text-red-300">
+                                    You have entered an area with <span id="geofenceIssueCount" class="font-black text-lg">0</span> pending civic issues within a 2km radius. Please stay alert.
+                                </p>
+                            </div>
+                            <button onclick="filterNearbyIssues()" class="shrink-0 bg-red-100 hover:bg-red-200 dark:bg-red-800/50 dark:hover:bg-red-800 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg font-bold text-sm transition-colors shadow-sm flex items-center">
+                                <i data-lucide="map-pin" class="w-4 h-4 mr-2"></i> View Nearby Issues
+                            </button>
+                        </div>
+                        <button onclick="dismissGeofenceBanner()" class="absolute top-4 right-4 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Dashboard Stats -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div onclick="openStatsModal('platform')"
@@ -688,6 +711,37 @@
 
         lucide.createIcons();
 
+        // Toast Notification System
+        function showToast(title, message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            let icon = 'info';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'alert-circle';
+
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i data-lucide="${icon}" class="w-6 h-6 ${type === 'success' ? 'text-emerald-500' : type === 'error' ? 'text-red-500' : 'text-blue-500'}"></i>
+                </div>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => toast.classList.add('show'), 10);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 400);
+            }, 5000);
+        }
+
         // Global state for client-side filtering
         let allReports = [];
 
@@ -1030,8 +1084,114 @@
             if (savedEmail) {
                 document.getElementById('userEmailDisplay').innerText = savedEmail;
             }
-            loadDynamicReports();
+            loadDynamicReports().then(() => {
+                initGeofencing();
+            });
         });
+
+        // --- Geofencing Feature ---
+        let currentWatchId = null;
+        let nearbyIssuesCache = []; // Store the currently nearby issues
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = (lat2 - lat1) * (Math.PI / 180);
+            const dLon = (lon2 - lon1) * (Math.PI / 180);
+            const a = 
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
+                Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+            return R * c; // Distance in km
+        }
+
+        function initGeofencing() {
+            if ("geolocation" in navigator) {
+                currentWatchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        checkHotspots(userLat, userLng);
+                    },
+                    (error) => {
+                        console.log("Geofencing paused: Unable to get location. Code:", error.code);
+                    },
+                    { enableHighAccuracy: true, maximumAge: 30000, timeout: 27000 }
+                );
+            }
+        }
+
+        function checkHotspots(userLat, userLng) {
+            // Configuration Thresholds
+            const RADIUS_KM = 2.0; 
+            const MIN_ISSUES_COUNT = 3;
+            const COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
+
+            // Find all pending issues within the radius
+            nearbyIssuesCache = allReports.filter(report => {
+                const status = (report.status || 'Pending').toLowerCase();
+                if (status.includes('resolved') || status.includes('completed')) return false;
+                
+                if (report.latitude && report.longitude) {
+                    const distance = calculateDistance(userLat, userLng, report.latitude, report.longitude);
+                    return distance <= RADIUS_KM;
+                }
+                return false;
+            });
+
+            const issueCount = nearbyIssuesCache.length;
+            
+            // Check threshold and cooldown
+            const now = Date.now();
+            const storedAlertTime = localStorage.getItem('lastGeofenceAlertTime') || 0;
+            const timeSinceLastAlert = now - parseInt(storedAlertTime);
+
+            if (issueCount >= MIN_ISSUES_COUNT && timeSinceLastAlert > COOLDOWN_MS) {
+                triggerGeofenceAlert(issueCount);
+                localStorage.setItem('lastGeofenceAlertTime', now.toString());
+            }
+        }
+
+        function triggerGeofenceAlert(count) {
+            const banner = document.getElementById('geofenceBanner');
+            document.getElementById('geofenceIssueCount').innerText = count;
+            
+            banner.classList.remove('hidden');
+            // Slight delay to allow display:block to apply before animating opacity/transform
+            setTimeout(() => {
+                banner.classList.remove('translate-y-[-10px]', 'opacity-0');
+            }, 50);
+
+            showToast('Hotspot Detected', `You are near ${count} open issues.`, 'error');
+        }
+
+        function dismissGeofenceBanner() {
+            const banner = document.getElementById('geofenceBanner');
+            banner.classList.add('translate-y-[-10px]', 'opacity-0');
+            setTimeout(() => {
+                banner.classList.add('hidden');
+            }, 500);
+        }
+
+        function filterNearbyIssues() {
+            // Show only nearby issues in the main list
+            renderReports(nearbyIssuesCache);
+            
+            // Update search placeholder to reflect state
+            const searchInput = document.getElementById('searchInput');
+            searchInput.value = '';
+            searchInput.placeholder = "Showing issues within 2km...";
+            
+            // Add a visual indicator to the list header
+            const listHeaderElement = document.querySelector('#reportsList').previousElementSibling.querySelector('h2');
+            if(listHeaderElement) {
+                listHeaderElement.innerHTML = `<i data-lucide="map-pin" class="w-5 h-5 text-red-500 mr-2"></i> Nearby Feed (2km Radius)`;
+                lucide.createIcons();
+            }
+            
+            // Scroll to the list
+            document.getElementById('reportsList').scrollIntoView({ behavior: 'smooth' });
+        }
 
         // Mobile Sidebar Toggle
         function toggleSidebar() {
